@@ -304,6 +304,109 @@ def get_pitch_data(df_gen,adv_names_list,journees_list,col_low,col_med,col_high,
             "high":row[col_high]/total*100,"med":row[col_med]/total*100,"low":row[col_low]/total*100})
     return rows
 
+# ══════════════════════════════════════════════════════════════════════════════
+# GENERATION PDF
+# ══════════════════════════════════════════════════════════════════════════════
+def generate_player_pdf(joueur,poste,saison,n_m,minutes,min_pm,
+                        buts,assists,yc,ta_t,ta_w,ta_pct,
+                        pass_pm,rec_passes,pass_w,pass_pct,
+                        fp_w,fp_pct,bp_w,bp_pct,ptf_w,ptf_pct,
+                        ppa_w,ppa_pct,long_w,long_pct,tp_w,tp_pct,crosses_pct,
+                        aer_t,aer_w,aer_pct,def_t,def_w,def_pct,
+                        rec_j,rec_j_w,loss_j,loss_j_w,
+                        intercept_j,slides_t,slides_w_n,fouls_j,rc_j,
+                        xg,shots_t,shots_w,conv_pct,xA,shot_assists_j,
+                        second_assists,crosses_w,off_t,off_w,off_pct,
+                        drib_t,drib_w,drib_pct,prog_runs,touches_pa,fouls_suf,offsides):
+    from fpdf import FPDF
+    from fpdf.enums import XPos,YPos
+
+    class _PDF(FPDF): pass
+    pdf=_PDF(orientation="P",unit="mm",format="A4")
+    pdf.add_page()
+    pdf.set_auto_page_break(auto=True,margin=15)
+    W=210; M=14
+
+    def tc(r,g,b): pdf.set_text_color(r,g,b)
+    def fc(r,g,b): pdf.set_fill_color(r,g,b)
+    def dc(r,g,b): pdf.set_draw_color(r,g,b)
+    def pc(pct):
+        if pct>=70: return (0,200,100)
+        elif pct>=55: return (220,120,40)
+        return (210,60,60)
+
+    fc(13,17,23); pdf.rect(0,0,210,297,"F")
+    fc(22,29,39); pdf.rect(0,0,210,44,"F")
+
+    pdf.set_xy(M,7); pdf.set_font("Helvetica","",8); tc(201,168,76)
+    pdf.cell(0,5,"US THIONVILLE LUSITANOS",new_x=XPos.LMARGIN,new_y=YPos.NEXT)
+    pdf.set_xy(M,13); pdf.set_font("Helvetica","B",22); tc(240,237,230)
+    pdf.cell(0,10,joueur.upper(),new_x=XPos.LMARGIN,new_y=YPos.NEXT)
+    pdf.set_xy(M,25); pdf.set_font("Helvetica","",9); tc(139,153,172)
+    pdf.cell(0,5,f"{poste}  |  {saison}  |  {n_m} matchs  |  {minutes} min  |  {min_pm} min/match",new_x=XPos.LMARGIN,new_y=YPos.NEXT)
+    dc(201,168,76); pdf.set_line_width(0.5); pdf.line(M,38,W-M,38)
+
+    y=46; fc(30,39,51); pdf.rect(M,y,W-2*M,20,"F")
+    for i,(lab,val,col) in enumerate([("TOTAL ACTIONS",str(int(ta_t)),(200,200,200)),("REUSSIES",str(int(ta_w)),(0,200,100)),("% REUSSITE",f"{ta_pct}%",(255,208,10))]):
+        x=M+i*(W-2*M)/3
+        pdf.set_xy(x+2,y+2); pdf.set_font("Helvetica","",7); tc(139,153,172)
+        pdf.cell((W-2*M)/3-4,4,lab,new_x=XPos.RIGHT,new_y=YPos.TOP)
+        pdf.set_xy(x+2,y+8); pdf.set_font("Helvetica","B",16); tc(*col)
+        pdf.cell((W-2*M)/3-4,9,val,new_x=XPos.RIGHT,new_y=YPos.TOP)
+
+    y=72; kw=(W-2*M)/6
+    for i,(lab,val) in enumerate([("Matchs",str(n_m)),("Minutes",str(minutes)),("Min/Match",str(min_pm)),("Buts",str(buts)),("Passes dec.",str(assists)),("Jaunes",str(yc))]):
+        x=M+i*kw; fc(30,39,51); pdf.rect(x+0.5,y,kw-1,16,"F")
+        pdf.set_xy(x,y+2); pdf.set_font("Helvetica","",7); tc(139,153,172)
+        pdf.cell(kw,4,lab,align="C",new_x=XPos.RIGHT,new_y=YPos.TOP)
+        pdf.set_xy(x,y+7); pdf.set_font("Helvetica","B",13)
+        tc(255,208,10) if lab=="Jaunes" else tc(240,237,230)
+        pdf.cell(kw,7,val,align="C",new_x=XPos.RIGHT,new_y=YPos.TOP)
+
+    def stitle(t,y,x=M,w=58):
+        pdf.set_xy(x,y); pdf.set_font("Helvetica","B",8); tc(201,168,76)
+        pdf.cell(w,5,t,new_x=XPos.LMARGIN,new_y=YPos.NEXT)
+        dc(42,42,42); pdf.set_line_width(0.2); pdf.line(x,y+5.5,x+w,y+5.5)
+
+    def srow(lab,val,y,x=M,w=58,col=(240,237,230)):
+        fc(30,39,51); pdf.rect(x,y,w,7,"F")
+        pdf.set_xy(x+2,y+1.5); pdf.set_font("Helvetica","",7.5); tc(139,153,172)
+        pdf.cell(w-20,5,str(lab),new_x=XPos.RIGHT,new_y=YPos.TOP)
+        pdf.set_xy(x+w-18,y+1.5); pdf.set_font("Helvetica","B",7.5); tc(*col)
+        pdf.cell(16,5,str(val),align="R",new_x=XPos.RIGHT,new_y=YPos.TOP)
+
+    y=96; cw=58; gap=2
+    x1,x2,x3=M,M+cw+gap,M+2*(cw+gap)
+
+    stitle("CONSTRUCTION",y,x1,cw)
+    for i,(lab,val) in enumerate([("Passes/match",pass_pm),("Passes recues",int(rec_passes)),("Passes reussies",int(pass_w)),("Vers l avant",int(fp_w)),("Vers l arriere",int(bp_w)),("Tiers final",int(ptf_w)),("Longues",int(long_w))]):
+        srow(lab,val,y+7+i*8,x1,cw)
+
+    stitle("PRECISION (%)",y,x2,cw)
+    for i,(lab,val) in enumerate([("Passes globales",f"{pass_pct}%"),("Vers l avant",f"{fp_pct}%"),("Vers l arriere",f"{bp_pct}%"),("Tiers final",f"{ptf_pct}%"),("Surface adverse",f"{ppa_pct}%"),("Longues",f"{long_pct}%"),("En profondeur",f"{tp_pct}%"),("Centres",f"{crosses_pct}%")]):
+        srow(lab,val,y+7+i*8,x2,cw,pc(float(str(val).replace("%",""))))
+
+    stitle("DEFENSE",y,x3,cw)
+    for i,(lab,val,col) in enumerate([("Duels aer. disp.",int(aer_t),(240,237,230)),("Duels aer. gagnes",int(aer_w),(240,237,230)),("Duels aer. %",f"{aer_pct}%",pc(aer_pct)),("Duels def. disp.",int(def_t),(240,237,230)),("Duels def. gagnes",int(def_w),(240,237,230)),("Duels def. %",f"{def_pct}%",pc(def_pct)),("Recup. zone off.",f"{rec_j_w}/{rec_j}",(240,237,230)),("Pertes zone def.",f"{loss_j_w}/{loss_j}",(240,237,230)),("Interceptions",int(intercept_j),(240,237,230)),("Tacles reussis",f"{slides_w_n}/{slides_t}",(240,237,230)),("Fautes",int(fouls_j),(240,237,230))]):
+        srow(lab,val,y+7+i*8,x3,cw,col)
+
+    y2=y+7+11*8+8
+    stitle("FINITION",y2,x1,cw)
+    for i,(lab,val,col) in enumerate([("Buts",int(buts),(0,200,100)),("xG",xg,(240,237,230)),("Tirs/cadres",f"{int(shots_t)}/{int(shots_w)}",(240,237,230)),("Taux conversion",f"{conv_pct}%",pc(conv_pct))]):
+        srow(lab,val,y2+7+i*8,x1,cw,col)
+
+    stitle("CREATION",y2,x2,cw)
+    for i,(lab,val) in enumerate([("Passes decisives",int(assists)),("xA",xA),("Passes cles",int(shot_assists_j)),("Avant-derniere passe",int(second_assists)),("Passes en prof.",int(tp_w)),("Passes surface adv.",int(ppa_w)),("Centres reussis",int(crosses_w))]):
+        srow(lab,val,y2+7+i*8,x2,cw)
+
+    stitle("OFFENSIF",y2,x3,cw)
+    for i,(lab,val,col) in enumerate([("Duels off. disp.",int(off_t),(240,237,230)),("Duels off. gagnes",int(off_w),(240,237,230)),("Duels off. %",f"{off_pct}%",pc(off_pct)),("Dribbles tentes",int(drib_t),(240,237,230)),("Dribbles reussis",int(drib_w),(240,237,230)),("Dribbles %",f"{drib_pct}%",pc(drib_pct)),("Courses prog.",int(prog_runs),(240,237,230)),("Touches surface",int(touches_pa),(240,237,230)),("Fautes subies",int(fouls_suf),(240,237,230)),("Hors-jeu",int(offsides),(240,237,230))]):
+        srow(lab,val,y2+7+i*8,x3,cw,col)
+
+    pdf.set_xy(M,282); pdf.set_font("Helvetica","",7); tc(60,70,80)
+    pdf.cell(0,5,f"US Thionville Lusitanos  |  {saison}",align="C")
+    return bytes(pdf.output())
+
 # ── SIDEBAR ──
 with st.sidebar:
     logo_path=Path(__file__).parent/"logo.png"
@@ -523,27 +626,27 @@ if mode=="👤 Joueur":
 
     st.markdown("")
 
-    # ── Bouton PDF ──
-    st.markdown('''
-    <div style="display:flex;justify-content:flex-end;margin:0 0 12px 0;">
-      <button onclick="window.print()" style="background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.5);color:#C9A84C;padding:8px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">
-        📥 Télécharger le rapport PDF
-      </button>
-    </div>
-    <div style="text-align:right;margin-top:6px;font-size:11px;color:#8b949e;line-height:1.6;">
-      💻 <b>PC/Mac</b> : cliquer sur le bouton → Enregistrer en PDF<br>
-      📱 <b>iPhone</b> : Partager → Imprimer → pincer pour zoomer → Partager → Enregistrer en PDF<br>
-      🤖 <b>Android</b> : Menu → Imprimer → Enregistrer en PDF
-    </div>
-    <style>
-    @media print {
-      section[data-testid="stSidebar"]{display:none !important;}
-      [data-testid="stHeader"]{display:none !important;}
-      [data-testid="stToolbar"]{display:none !important;}
-      .block-container{padding:0 !important;}
-      button{display:none !important;}
-    }
-    </style>''', unsafe_allow_html=True)
+    # ── Bouton téléchargement PDF ──
+    _pdf = generate_player_pdf(
+        joueur_sel, "Defenseur Central", saison_label_j,
+        n_m_j, minutes_j, min_per_match, buts_j, assists_j, yc_j,
+        ta_t, ta_w, ta_pct,
+        pass_pm, rec_passes, pass_w, pass_pct,
+        fp_w, fp_pct, bp_w, bp_pct, ptf_w, ptf_pct,
+        ppa_w, ppa_pct, long_w, long_pct, tp_w, tp_pct, crosses_pct,
+        aer_t, aer_w, aer_pct, def_t, def_w, def_pct,
+        rec_j, rec_j_w, loss_j, loss_j_w,
+        intercept_j, slides_t, slides_w_n, fouls_j, rc_j,
+        xg_j, shots_t, shots_w, conv_pct,
+        xA_j, shot_assists_j, second_assists, crosses_w,
+        off_t, off_w, off_pct, drib_t, drib_w, drib_pct,
+        prog_runs, touches_pa, fouls_suf, offsides)
+    st.download_button(
+        label="📥 Télécharger le rapport PDF",
+        data=_pdf,
+        file_name=f"rapport_{joueur_sel.replace(' ','_')}.pdf",
+        mime="application/pdf",
+        use_container_width=True)
 
     # ── Helpers ──
     def qty_bar(label,val,max_val,color="#4499ff"):
