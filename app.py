@@ -496,34 +496,7 @@ if mode=="👤 Joueur":
         col.markdown(f'<div class="kpi"><div class="kpi-label">{label}</div><div class="kpi-value" style="color:{color};">{val}</div></div>',unsafe_allow_html=True)
     pk(c1,"Matchs",n_m_j); pk(c2,"Minutes",minutes_j); pk(c3,"Min / Match",min_per_match)
     pk(c4,"Buts",buts_j); pk(c5,"Passes déc.",assists_j); pk(c6,"🟨 Jaunes",yc_j,GOLD)
-    # ── Bouton téléchargement PDF ──
-    st.markdown("""
-    <div style="display:flex;justify-content:flex-end;margin-bottom:8px;">
-      <button onclick="window.print()" style="
-        background:rgba(201,168,76,0.15);
-        border:1px solid rgba(201,168,76,0.5);
-        color:#C9A84C;
-        padding:8px 18px;
-        border-radius:8px;
-        font-size:13px;
-        font-weight:600;
-        cursor:pointer;
-        letter-spacing:0.5px;
-      ">📥 Télécharger le rapport PDF</button>
-    </div>
-    <style>
-      @media print {
-        section[data-testid="stSidebar"] {display:none !important;}
-        [data-testid="stHeader"] {display:none !important;}
-        .block-container {padding:0 !important;}
-        button {display:none !important;}
-      }
-    </style>
-    """, unsafe_allow_html=True)
-
     st.markdown("")
-
-
 
     # ── Helpers ──
     def qty_bar(label,val,max_val,color="#4499ff"):
