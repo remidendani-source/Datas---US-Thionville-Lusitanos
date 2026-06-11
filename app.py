@@ -89,7 +89,7 @@ def kpi(col,label,value,delta=None,inverse=False,fmt=".2f",suffix=""):
         diff=value-delta
         if diff==0: cls,sign="kpi-neu","="
         elif (diff>0 and not inverse) or (diff<0 and inverse): cls,sign="kpi-pos","+"
-        else: cls,sign="kpi-neg","+"
+        else: cls,sign="kpi-neg",""
         dh=f'<div class="{cls}">{sign}{diff:{fmt}}{suffix} vs adv.</div>'
     col.markdown(f'<div class="kpi"><div class="kpi-label">{label}</div><div class="kpi-value">{vs}</div>{dh}</div>',unsafe_allow_html=True)
 
