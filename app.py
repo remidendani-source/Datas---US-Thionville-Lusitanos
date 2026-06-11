@@ -276,8 +276,7 @@ def make_pass_svg(fp_r,bp_r,long_r,tp_r,ptf_r,ppa_r,total_w,width=320,height=430
     items=[("#4488ff","→ Avant"),("#ff3355","← Arrière"),("#ff8800","Long"),("#ffdd00","Profond"),("#22ddaa","T.Final"),("#cc44ff","Surface")]
     lx=4
     for color,lbl in items:
-        svg.append(f'<circle cx="{lx+5}" cy="{legend_y}" r="4" fill="{color}"/>')
-        svg.append(f'<text x="{lx+12}" y="{legend_y+4}" font-family="Arial,sans-serif" font-size="8" fill="#ccc">{lbl}</text>')
+        svg.append(f'<text x="{lx+4}" y="{legend_y+4}" font-family="Arial,sans-serif" font-size="8" fill="#ccc">{lbl}</text>')
         lx+=W//6
     svg.append('</svg>')
     return "".join(svg)
@@ -1192,7 +1191,7 @@ elif mode=="⚽ Collectif":
         section("Passes vers le tiers final")
         f23=go.Figure(); f23=pct_bar_overlay(f23,journees_adv,thi_pass["Passes to final third"],thi_pass["Passes to final third accurate"],"Total","Réussies","rgba(158,158,158,.35)",GREY)
         f23.update_layout(**lyt(),barmode="overlay",height=250); f23.update_yaxes(gridcolor=BORD); st.plotly_chart(f23,use_container_width=True,key="poss_f23")
-        section("Passes progressives (détail)")
+        section("Passes progressives")
         f24=go.Figure(); f24=pct_bar_overlay(f24,journees_adv,thi_pass["Progressive passes"],thi_pass["Progressive passes accurate"],"Total","Réussies","rgba(158,158,158,.35)",GREY)
         f24.update_layout(**lyt(),barmode="overlay",height=250); f24.update_yaxes(gridcolor=BORD); st.plotly_chart(f24,use_container_width=True,key="poss_f24")
 
