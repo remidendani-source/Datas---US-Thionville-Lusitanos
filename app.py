@@ -322,45 +322,128 @@ COMP_LABELS = {
 }
 if "nav_mode" not in st.session_state: st.session_state.nav_mode = "⚽ Collectif"
 if "nav_page" not in st.session_state: st.session_state.nav_page = "🏠 Vue d'ensemble"
+if "sidebar_collapsed" not in st.session_state: st.session_state.sidebar_collapsed = False
 
-# ── SIDEBAR ──
+_sc = st.session_state.sidebar_collapsed
+_sb_w = "64px" if _sc else "242px"
+
+# ── SIDEBAR CSS DataScout style ──
+st.markdown(f"""<style>
+[data-testid="collapsedControl"] {{display:none!important;}}
+button[kind="header"] {{display:none!important;}}
+section[data-testid="stSidebar"] > div:first-child {{padding:0!important;background:#0d1117!important;border-right:1px solid #1e2733!important;}}
+[data-testid="stSidebarContent"] {{background:#0d1117!important;padding:0!important;overflow:hidden!important;}}
+section[data-testid="stSidebar"] {{min-width:{_sb_w}!important;max-width:{_sb_w}!important;transition:all 0.25s ease!important;}}
+/* Cache les vrais boutons radio/selectbox dans la sidebar quand collapsée */
+{'section[data-testid="stSidebar"] .stRadio label span:last-child, section[data-testid="stSidebar"] .stSelectbox label {display:none!important;}' if _sc else ''}
+/* Style boutons toggle */
+section[data-testid="stSidebar"] button {{
+    background:transparent!important;border:none!important;color:#555!important;
+    font-size:18px!important;padding:6px!important;
+}}
+section[data-testid="stSidebar"] button:hover {{color:#fff!important;background:rgba(255,255,255,0.05)!important;}}
+/* Style radio sidebar */
+section[data-testid="stSidebar"] .stRadio > div {{gap:2px!important;}}
+section[data-testid="stSidebar"] .stRadio label {{
+    display:flex!important;align-items:center!important;gap:10px!important;
+    padding:9px 14px!important;border-radius:8px!important;margin:1px 6px!important;
+    font-size:13px!important;font-weight:500!important;color:#8b949e!important;
+    cursor:pointer!important;transition:all 0.15s!important;
+    background:transparent!important;border:none!important;
+}}
+section[data-testid="stSidebar"] .stRadio label:hover {{background:rgba(255,255,255,0.05)!important;color:#fff!important;}}
+section[data-testid="stSidebar"] .stRadio [data-baseweb="radio"] input:checked + div + span,
+section[data-testid="stSidebar"] .stRadio input:checked ~ div {{color:#fff!important;}}
+section[data-testid="stSidebar"] .stRadio [aria-checked="true"] + label,
+section[data-testid="stSidebar"] .stRadio label:has(input:checked) {{
+    background:rgba(255,255,255,0.08)!important;color:#fff!important;
+    border-left:3px solid #ffd60a!important;
+}}
+/* Masque les ronds radio natifs */
+section[data-testid="stSidebar"] .stRadio [data-baseweb="radio"] {{display:none!important;}}
+/* Sections labels */
+.sb-section {{font-size:9px;font-weight:700;color:#3a3a3a;letter-spacing:1.5px;text-transform:uppercase;padding:10px 20px 3px 20px;{'display:none' if _sc else ''}}}
+.sb-divider {{height:1px;background:#1a2030;margin:6px 10px;}}
+.sb-logo-wrap {{display:flex;align-items:center;gap:10px;padding:14px 14px 10px 14px;{'justify-content:center;' if _sc else ''}}}
+.sb-logo-text {{font-size:12px;font-weight:800;color:#fff;line-height:1.3;{'display:none' if _sc else ''}}}
+.sb-logo-sub {{font-size:9px;color:#444;font-weight:400;display:block;}}
+.sb-toggle-row {{display:flex;justify-content:{'center' if _sc else 'flex-end'};padding:4px 8px 2px 8px;}}
+</style>""", unsafe_allow_html=True)
+
+# ── SIDEBAR CONTENU ──
 with st.sidebar:
+    # Toggle
+    st.markdown('<div class="sb-toggle-row">', unsafe_allow_html=True)
+    if st.button("›" if _sc else "‹", key="sb_toggle"):
+        st.session_state.sidebar_collapsed = not st.session_state.sidebar_collapsed
+        st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # Logo
     logo_path_sb = Path(__file__).parent / "logo.png"
     if logo_path_sb.exists():
-        col_l,col_c,col_r=st.columns([1,2,1])
-        col_c.image(str(logo_path_sb),width=120)
-    st.markdown("<div style='font-size:19px;font-weight:800;color:#ffffff;margin:4px 0 6px 0;text-align:center;'>US Thionville Lusitanos</div>", unsafe_allow_html=True)
-    st.divider()
-    mode_sb = st.radio("", ["⚽ Collectif", "👤 Joueur", "📊 KPI'S LIGUE 3"],
-        index=["⚽ Collectif","👤 Joueur","📊 KPI'S LIGUE 3"].index(st.session_state.nav_mode),
+        import base64 as _b64sb
+        with open(str(logo_path_sb),"rb") as _lf: _lb = _b64sb.b64encode(_lf.read()).decode()
+        _lsz = 30 if _sc else 38
+        logo_html = f'<img src="data:image/png;base64,{_lb}" style="height:{_lsz}px;width:auto;flex-shrink:0;"/>'
+    else:
+        logo_html = '<div style="width:30px;height:30px;background:#1e2733;border-radius:6px;flex-shrink:0;"></div>'
+    title_html = "" if _sc else '<div class="sb-logo-text">US Thionville<span class="sb-logo-sub">Lusitanos</span></div>'
+    st.markdown(f'<div class="sb-logo-wrap">{logo_html}{title_html}</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sb-divider"></div>', unsafe_allow_html=True)
+
+    # Mode navigation
+    if not _sc:
+        st.markdown('<div class="sb-section">Mode</div>', unsafe_allow_html=True)
+    _modes = ["⚽ Collectif", "👤 Joueur", "📊 KPI'S LIGUE 3"]
+    _mode_fmt = lambda x: x.split(" ")[0] if _sc else x
+    mode_sb = st.radio("", _modes,
+        index=_modes.index(st.session_state.nav_mode),
+        format_func=_mode_fmt,
         label_visibility="collapsed")
     if mode_sb != st.session_state.nav_mode:
         st.session_state.nav_mode = mode_sb
         st.rerun()
     mode = st.session_state.nav_mode
-    st.divider()
+    st.markdown('<div class="sb-divider"></div>', unsafe_allow_html=True)
 
 if mode in ("⚽ Collectif", "👤 Joueur"):
     with st.sidebar:
         comps = sorted(gen_all["Competition"].dropna().unique().tolist())
         comp_opts = {COMP_LABELS.get(c,c):c for c in comps}
         if mode == "⚽ Collectif":
-            saison_label = st.selectbox("🏆 Saison", list(comp_opts.keys()))
+            if not _sc:
+                st.markdown('<div class="sb-section">Saison</div>', unsafe_allow_html=True)
+            saison_label = st.selectbox("🏆 Saison", list(comp_opts.keys()),
+                label_visibility="collapsed" if _sc else "visible")
             saison_comp  = comp_opts[saison_label]
             n_m = len(gen_all[(gen_all["Competition"]==saison_comp)&(gen_all["Team"]==TEAM)])
-            st.markdown(f"<span style='color:{MUTED};font-size:12px;'>📊 {n_m} matchs analysés</span>", unsafe_allow_html=True)
-            st.divider()
-            page = st.radio("Menu", NAV_COLLECTIF)
+            if not _sc:
+                st.markdown(f"<span style='color:{MUTED};font-size:11px;padding-left:8px;'>📊 {n_m} matchs analysés</span>", unsafe_allow_html=True)
+            st.markdown('<div class="sb-divider"></div>', unsafe_allow_html=True)
+            if not _sc:
+                st.markdown('<div class="sb-section">Navigation</div>', unsafe_allow_html=True)
+            _nav_icons = {"🏠 Vue d'ensemble":"🏠","🎯 Finition":"🎯","🛡️ Pressing":"🛡️","🔁 En possession":"🔁","📅 Analyse par match":"📅"}
+            page = st.radio("Menu", NAV_COLLECTIF,
+                format_func=lambda x: _nav_icons.get(x,x) if _sc else x,
+                label_visibility="collapsed")
         elif mode == "👤 Joueur":
-            saison_label_j = st.selectbox("🏆 Saison", list(comp_opts.keys()))
-            st.divider()
-            st.markdown(f"<div style='font-size:11px;color:{MUTED};text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;'>Joueur</div>", unsafe_allow_html=True)
+            if not _sc:
+                st.markdown('<div class="sb-section">Saison</div>', unsafe_allow_html=True)
+            saison_label_j = st.selectbox("🏆 Saison", list(comp_opts.keys()),
+                label_visibility="collapsed" if _sc else "visible")
+            st.markdown('<div class="sb-divider"></div>', unsafe_allow_html=True)
+            if not _sc:
+                st.markdown('<div class="sb-section">Joueur</div>', unsafe_allow_html=True)
             joueur_sel = st.radio("", ALL_PLAYERS, label_visibility="collapsed")
-            st.divider()
+            st.markdown('<div class="sb-divider"></div>', unsafe_allow_html=True)
             df_j = players_all[joueur_sel].copy()
             df_played_all = df_j[df_j["Minutes played"]>20].sort_values("Journée").reset_index(drop=True)
             match_labels_j = [str(r["Journée"]) for _,r in df_played_all.iterrows()]
-            selected_j = st.multiselect("Filtrer les matchs", match_labels_j, default=[])
+            if not _sc:
+                selected_j = st.multiselect("Filtrer les matchs", match_labels_j, default=[])
+            else:
+                selected_j = []
             if selected_j:
                 df_joueur = df_played_all[df_played_all["Journée"].isin(selected_j)].reset_index(drop=True)
             else:
@@ -830,7 +913,7 @@ elif mode=="👤 Joueur":
         "Chafik Gourichy":   [(.22,.82)],
     }
     ALL_POS = [(.92,.50),(.78,.30),(.78,.50),(.78,.70),(.62,.15),(.62,.85),
-               (.55,.50),(.45,.30),(.45,.70),(.32,.50),(.20,.18),(.12,.50),(.20,.82)]
+               (.55,.50),(.45,.30),(.45,.70),(.32,.50),(.20,.18),(.12,.50),(.22,.82)]
     actif = set(JOUEUR_POSTES.get(joueur_sel,[]))
 
     def _terrain_svg(w=200,h=128):
