@@ -233,17 +233,23 @@ def make_pass_svg(fp_r,bp_r,long_r,tp_r,ptf_r,ppa_r,total_w,width=480,height=370
                   long_pct=50,ptf_pct=55,ppa_pct=47,crosses_pct=26):
     import math
     W,H=width,height
-    TC="#1c2f50"; TL="rgba(255,255,255,0.5)"; ARR="#1de8b5"; VC="#4dd9f5"; PC="#1de8b5"; RD="#ff4466"
+    TC="#1c2f50"; TL="rgba(255,255,255,0.5)"
+    # Couleurs par type — alignées sur l'encadré "Répartition"
+    C_AV="#4488ff"   # → Avant
+    C_AR="#ff3355"   # ← Arrière
+    C_LG="#ff8800"   # Longues
+    C_TP="#ffdd00"   # Profondeur
+    C_TF="#22ddaa"   # Tiers final
+    C_SU="#cc44ff"   # Surface / Centres
     pad=18; tw=W-2*pad; th=H-2*pad; cx=pad+tw//2; cy=pad+th//2; mx=pad+tw//2
     bh=int(th*0.28); bw=11; by=cy-bh//2
     srw=int(tw*0.17); srh=int(th*0.54); srx=pad+tw-srw; sry=cy-srh//2
     sbw=int(tw*0.065); sbh=int(th*0.27); sbx=pad+tw-sbw; sby=cy-sbh//2
     cr=int(min(tw,th)*0.13); tfx=pad+int(tw*0.67)
-    # Flèche double sens : moitié gauche du terrain, milieu vertical
-    mid_x = pad+int(tw*0.22)   # centre de la flèche
-    half  = int(tw*0.16)        # demi-longueur
-    zx1   = mid_x - half        # bout gauche (arrière = rouge)
-    zx2   = mid_x + half        # bout droit  (avant  = vert)
+    mid_x = pad+int(tw*0.22)
+    half  = int(tw*0.16)
+    zx1   = mid_x - half
+    zx2   = mid_x + half
     zy    = cy
     s=[]
     def S(t): s.append(t)
@@ -263,16 +269,18 @@ def make_pass_svg(fp_r,bp_r,long_r,tp_r,ptf_r,ppa_r,total_w,width=480,height=370
     S(f'<rect x="{pad+tw}" y="{by}" width="{bw}" height="{bh}" fill="none" stroke="{TL}" stroke-width="1.5"/>')
     S(f'<line x1="{tfx}" y1="{pad}" x2="{tfx}" y2="{pad+th}" stroke="rgba(255,255,255,0.3)" stroke-width="1" stroke-dasharray="5,3"/>')
     sw=8; aw=int(sw*2); ah=int(sw*1.5)
-    # --- Flèche double sens : moitié gauche ROUGE (arrière), moitié droite VERTE (avant) ---
-    S(f'<line x1="{zx1+aw}" y1="{zy}" x2="{mid_x}" y2="{zy}" stroke="{RD}" stroke-width="{sw}" stroke-linecap="round"/>')
-    S(f'<polygon points="{zx1},{zy} {zx1+aw},{zy-ah//2} {zx1+aw},{zy+ah//2}" fill="{RD}"/>')
-    S(f'<line x1="{mid_x}" y1="{zy}" x2="{zx2-aw}" y2="{zy}" stroke="{ARR}" stroke-width="{sw}" stroke-linecap="round"/>')
-    S(f'<polygon points="{zx2},{zy} {zx2-aw},{zy-ah//2} {zx2-aw},{zy+ah//2}" fill="{ARR}"/>')
-    # labels sous la flèche
+    # --- Flèche double sens : arrière (rouge) / avant (bleu) ---
+    S(f'<line x1="{zx1+aw}" y1="{zy}" x2="{mid_x}" y2="{zy}" stroke="{C_AR}" stroke-width="{sw}" stroke-linecap="round"/>')
+    S(f'<polygon points="{zx1},{zy} {zx1+aw},{zy-ah//2} {zx1+aw},{zy+ah//2}" fill="{C_AR}"/>')
+    S(f'<line x1="{mid_x}" y1="{zy}" x2="{zx2-aw}" y2="{zy}" stroke="{C_AV}" stroke-width="{sw}" stroke-linecap="round"/>')
+    S(f'<polygon points="{zx2},{zy} {zx2-aw},{zy-ah//2} {zx2-aw},{zy+ah//2}" fill="{C_AV}"/>')
+    # labels : val/90 en blanc, % en couleur
     S(f'<text x="{zx1+6}" y="{zy+14}" text-anchor="start" font-family="Arial,sans-serif" font-size="9" fill="rgba(255,255,255,0.5)">arrière</text>')
-    S(f'<text x="{zx1+6}" y="{zy+25}" text-anchor="start" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="#ff7799">{bp_r:.1f}  {bp_r:.0f}%</text>')
+    S(f'<text x="{zx1+6}" y="{zy+25}" text-anchor="start" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="#ffffff">{bp_r:.1f}</text>')
+    S(f'<text x="{zx1+6+28}" y="{zy+25}" text-anchor="start" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="{C_AR}">{bp_r:.0f}%</text>')
     S(f'<text x="{zx2-6}" y="{zy+14}" text-anchor="end" font-family="Arial,sans-serif" font-size="9" fill="rgba(255,255,255,0.5)">avant</text>')
-    S(f'<text x="{zx2-6}" y="{zy+25}" text-anchor="end" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="{VC}">{fp_r:.1f}  {fp_r:.0f}%</text>')
+    S(f'<text x="{zx2-6-28}" y="{zy+25}" text-anchor="end" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="#ffffff">{fp_r:.1f}</text>')
+    S(f'<text x="{zx2-6}" y="{zy+25}" text-anchor="end" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="{C_AV}">{fp_r:.0f}%</text>')
     def arw(x1,y,x2,col,sw=8):
         aw2=int(sw*2); ah2=int(sw*1.5)
         t  = f'<line x1="{x1}" y1="{y}" x2="{x2-aw2}" y2="{y}" stroke="{col}" stroke-width="{sw}" stroke-linecap="round"/>'
@@ -280,33 +288,33 @@ def make_pass_svg(fp_r,bp_r,long_r,tp_r,ptf_r,ppa_r,total_w,width=480,height=370
         return t
     def nm(x,y,n):
         return f'<text x="{x}" y="{y-6}" text-anchor="middle" font-family="Arial,sans-serif" font-size="9" fill="rgba(255,255,255,0.5)">{n}</text>'
-    def lv(x1,y,x2,val,pct,col,pcol):
-        # val au départ (sous, à gauche), % à l'arrivée (sous, à droite)
-        t  = f'<text x="{x1+4}" y="{y+15}" text-anchor="start" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="{col}">{val}</text>'
-        t += f'<text x="{x2-4}" y="{y+15}" text-anchor="end" font-family="Arial,sans-serif" font-size="10" font-weight="700" fill="{pcol}">{pct}%</text>'
+    def lv(x1,y,x2,val,pct,col):
+        # val/90 en blanc à gauche, % en couleur à droite
+        t  = f'<text x="{x1+4}" y="{y+15}" text-anchor="start" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="#ffffff">{val}</text>'
+        t += f'<text x="{x2-4}" y="{y+15}" text-anchor="end" font-family="Arial,sans-serif" font-size="10" font-weight="700" fill="{col}">{pct}%</text>'
         return t
-    # 2. Passes longues
+    # Passes longues — orange
     ly=pad+int(th*0.14); lx1=mx; lx2=srx+int(srw*0.5)
-    S(arw(lx1,ly,lx2,ARR,8)); S(nm((lx1+lx2)//2,ly,"passes longues")); S(lv(lx1,ly,lx2,f"{long_r:.2f}",f"{long_pct:.0f}",VC,PC))
-    # 3. Passes dernier tiers — s'arrête avant la surface
+    S(arw(lx1,ly,lx2,C_LG,8)); S(nm((lx1+lx2)//2,ly,"passes longues")); S(lv(lx1,ly,lx2,f"{long_r:.2f}",f"{long_pct:.0f}",C_LG))
+    # Passes dernier tiers — vert
     py=pad+int(th*0.34); px1=tfx-int(tw*0.05); px2=srx-int(srw*0.1)
-    S(arw(px1,py,px2,ARR,8)); S(nm((px1+px2)//2,py,"passes dernier tiers")); S(lv(px1,py,px2,f"{ptf_r:.2f}",f"{ptf_pct:.0f}",VC,PC))
-    # 4. Passes vers surface
+    S(arw(px1,py,px2,C_TF,8)); S(nm((px1+px2)//2,py,"passes dernier tiers")); S(lv(px1,py,px2,f"{ptf_r:.2f}",f"{ptf_pct:.0f}",C_TF))
+    # Passes vers surface — violet
     ay=pad+int(th*0.52); ax1=tfx+int(tw*0.02); ax2=sbx
-    S(arw(ax1,ay,ax2,ARR,8)); S(nm((ax1+ax2)//2,ay,"passes vers surface")); S(lv(ax1,ay,ax2,f"{ppa_r:.2f}",f"{ppa_pct:.0f}",VC,PC))
-    # 5. Centres — flèche diagonale bas-milieu → surface de but
+    S(arw(ax1,ay,ax2,C_SU,8)); S(nm((ax1+ax2)//2,ay,"passes vers surface")); S(lv(ax1,ay,ax2,f"{ppa_r:.2f}",f"{ppa_pct:.0f}",C_SU))
+    # Centres — violet aussi (même catégorie "surface")
     import math as _m
     ccx1=tfx+int(tw*0.06); ccy1=pad+int(th*0.88)
     ccx2=sbx+int(sbw*0.2); ccy2=pad+int(th*0.72)
     ddx=ccx2-ccx1; ddy=ccy2-ccy1; le=_m.sqrt(ddx*ddx+ddy*ddy) or 1
     uux=ddx/le; uuy=ddy/le; caw=18; cah=14
     body_x=ccx2-uux*caw; body_y=ccy2-uuy*caw
-    S(f'<line x1="{ccx1}" y1="{ccy1}" x2="{body_x:.0f}" y2="{body_y:.0f}" stroke="{ARR}" stroke-width="8" stroke-linecap="round"/>')
+    S(f'<line x1="{ccx1}" y1="{ccy1}" x2="{body_x:.0f}" y2="{body_y:.0f}" stroke="{C_SU}" stroke-width="8" stroke-linecap="round"/>')
     aax=ccx2-uux*caw; aay=ccy2-uuy*caw
-    S(f'<polygon points="{ccx2:.0f},{ccy2:.0f} {aax-uuy*cah/2:.0f},{aay+uux*cah/2:.0f} {aax+uuy*cah/2:.0f},{aay-uux*cah/2:.0f}" fill="{ARR}"/>')
+    S(f'<polygon points="{ccx2:.0f},{ccy2:.0f} {aax-uuy*cah/2:.0f},{aay+uux*cah/2:.0f} {aax+uuy*cah/2:.0f},{aay-uux*cah/2:.0f}" fill="{C_SU}"/>')
     S(f'<text x="{ccx1}" y="{ccy1+14}" text-anchor="middle" font-family="Arial,sans-serif" font-size="9" fill="rgba(255,255,255,0.5)">centres</text>')
-    S(f'<text x="{ccx1}" y="{ccy1+26}" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="{VC}">{bp_r:.2f}</text>')
-    S(f'<text x="{ccx2+8:.0f}" y="{ccy2+4:.0f}" text-anchor="start" font-family="Arial,sans-serif" font-size="10" font-weight="700" fill="{PC}">{crosses_pct:.0f}%</text>')
+    S(f'<text x="{ccx1}" y="{ccy1+26}" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="#ffffff">{bp_r:.2f}</text>')
+    S(f'<text x="{ccx2+8:.0f}" y="{ccy2+4:.0f}" text-anchor="start" font-family="Arial,sans-serif" font-size="10" font-weight="700" fill="{C_SU}">{crosses_pct:.0f}%</text>')
     S("</svg>")
     return "".join(s)
 
@@ -322,128 +330,45 @@ COMP_LABELS = {
 }
 if "nav_mode" not in st.session_state: st.session_state.nav_mode = "⚽ Collectif"
 if "nav_page" not in st.session_state: st.session_state.nav_page = "🏠 Vue d'ensemble"
-if "sidebar_collapsed" not in st.session_state: st.session_state.sidebar_collapsed = False
 
-_sc = st.session_state.sidebar_collapsed
-_sb_w = "64px" if _sc else "242px"
-
-# ── SIDEBAR CSS DataScout style ──
-st.markdown(f"""<style>
-[data-testid="collapsedControl"] {{display:none!important;}}
-button[kind="header"] {{display:none!important;}}
-section[data-testid="stSidebar"] > div:first-child {{padding:0!important;background:#0d1117!important;border-right:1px solid #1e2733!important;}}
-[data-testid="stSidebarContent"] {{background:#0d1117!important;padding:0!important;overflow:hidden!important;}}
-section[data-testid="stSidebar"] {{min-width:{_sb_w}!important;max-width:{_sb_w}!important;transition:all 0.25s ease!important;}}
-/* Cache les vrais boutons radio/selectbox dans la sidebar quand collapsée */
-{'section[data-testid="stSidebar"] .stRadio label span:last-child, section[data-testid="stSidebar"] .stSelectbox label {display:none!important;}' if _sc else ''}
-/* Style boutons toggle */
-section[data-testid="stSidebar"] button {{
-    background:transparent!important;border:none!important;color:#555!important;
-    font-size:18px!important;padding:6px!important;
-}}
-section[data-testid="stSidebar"] button:hover {{color:#fff!important;background:rgba(255,255,255,0.05)!important;}}
-/* Style radio sidebar */
-section[data-testid="stSidebar"] .stRadio > div {{gap:2px!important;}}
-section[data-testid="stSidebar"] .stRadio label {{
-    display:flex!important;align-items:center!important;gap:10px!important;
-    padding:9px 14px!important;border-radius:8px!important;margin:1px 6px!important;
-    font-size:13px!important;font-weight:500!important;color:#8b949e!important;
-    cursor:pointer!important;transition:all 0.15s!important;
-    background:transparent!important;border:none!important;
-}}
-section[data-testid="stSidebar"] .stRadio label:hover {{background:rgba(255,255,255,0.05)!important;color:#fff!important;}}
-section[data-testid="stSidebar"] .stRadio [data-baseweb="radio"] input:checked + div + span,
-section[data-testid="stSidebar"] .stRadio input:checked ~ div {{color:#fff!important;}}
-section[data-testid="stSidebar"] .stRadio [aria-checked="true"] + label,
-section[data-testid="stSidebar"] .stRadio label:has(input:checked) {{
-    background:rgba(255,255,255,0.08)!important;color:#fff!important;
-    border-left:3px solid #ffd60a!important;
-}}
-/* Masque les ronds radio natifs */
-section[data-testid="stSidebar"] .stRadio [data-baseweb="radio"] {{display:none!important;}}
-/* Sections labels */
-.sb-section {{font-size:9px;font-weight:700;color:#3a3a3a;letter-spacing:1.5px;text-transform:uppercase;padding:10px 20px 3px 20px;{'display:none' if _sc else ''}}}
-.sb-divider {{height:1px;background:#1a2030;margin:6px 10px;}}
-.sb-logo-wrap {{display:flex;align-items:center;gap:10px;padding:14px 14px 10px 14px;{'justify-content:center;' if _sc else ''}}}
-.sb-logo-text {{font-size:12px;font-weight:800;color:#fff;line-height:1.3;{'display:none' if _sc else ''}}}
-.sb-logo-sub {{font-size:9px;color:#444;font-weight:400;display:block;}}
-.sb-toggle-row {{display:flex;justify-content:{'center' if _sc else 'flex-end'};padding:4px 8px 2px 8px;}}
-</style>""", unsafe_allow_html=True)
-
-# ── SIDEBAR CONTENU ──
+# ── SIDEBAR ──
 with st.sidebar:
-    # Toggle
-    st.markdown('<div class="sb-toggle-row">', unsafe_allow_html=True)
-    if st.button("›" if _sc else "‹", key="sb_toggle"):
-        st.session_state.sidebar_collapsed = not st.session_state.sidebar_collapsed
-        st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
-
-    # Logo
     logo_path_sb = Path(__file__).parent / "logo.png"
     if logo_path_sb.exists():
-        import base64 as _b64sb
-        with open(str(logo_path_sb),"rb") as _lf: _lb = _b64sb.b64encode(_lf.read()).decode()
-        _lsz = 30 if _sc else 38
-        logo_html = f'<img src="data:image/png;base64,{_lb}" style="height:{_lsz}px;width:auto;flex-shrink:0;"/>'
-    else:
-        logo_html = '<div style="width:30px;height:30px;background:#1e2733;border-radius:6px;flex-shrink:0;"></div>'
-    title_html = "" if _sc else '<div class="sb-logo-text">US Thionville<span class="sb-logo-sub">Lusitanos</span></div>'
-    st.markdown(f'<div class="sb-logo-wrap">{logo_html}{title_html}</div>', unsafe_allow_html=True)
-    st.markdown('<div class="sb-divider"></div>', unsafe_allow_html=True)
-
-    # Mode navigation
-    if not _sc:
-        st.markdown('<div class="sb-section">Mode</div>', unsafe_allow_html=True)
-    _modes = ["⚽ Collectif", "👤 Joueur", "📊 KPI'S LIGUE 3"]
-    _mode_fmt = lambda x: x.split(" ")[0] if _sc else x
-    mode_sb = st.radio("", _modes,
-        index=_modes.index(st.session_state.nav_mode),
-        format_func=_mode_fmt,
+        col_l,col_c,col_r=st.columns([1,2,1])
+        col_c.image(str(logo_path_sb),width=120)
+    st.markdown("<div style='font-size:19px;font-weight:800;color:#ffffff;margin:4px 0 6px 0;text-align:center;'>US Thionville Lusitanos</div>", unsafe_allow_html=True)
+    st.divider()
+    mode_sb = st.radio("", ["⚽ Collectif", "👤 Joueur", "📊 KPI'S LIGUE 3"],
+        index=["⚽ Collectif","👤 Joueur","📊 KPI'S LIGUE 3"].index(st.session_state.nav_mode),
         label_visibility="collapsed")
     if mode_sb != st.session_state.nav_mode:
         st.session_state.nav_mode = mode_sb
         st.rerun()
     mode = st.session_state.nav_mode
-    st.markdown('<div class="sb-divider"></div>', unsafe_allow_html=True)
+    st.divider()
 
 if mode in ("⚽ Collectif", "👤 Joueur"):
     with st.sidebar:
         comps = sorted(gen_all["Competition"].dropna().unique().tolist())
         comp_opts = {COMP_LABELS.get(c,c):c for c in comps}
         if mode == "⚽ Collectif":
-            if not _sc:
-                st.markdown('<div class="sb-section">Saison</div>', unsafe_allow_html=True)
-            saison_label = st.selectbox("🏆 Saison", list(comp_opts.keys()),
-                label_visibility="collapsed" if _sc else "visible")
+            saison_label = st.selectbox("🏆 Saison", list(comp_opts.keys()))
             saison_comp  = comp_opts[saison_label]
             n_m = len(gen_all[(gen_all["Competition"]==saison_comp)&(gen_all["Team"]==TEAM)])
-            if not _sc:
-                st.markdown(f"<span style='color:{MUTED};font-size:11px;padding-left:8px;'>📊 {n_m} matchs analysés</span>", unsafe_allow_html=True)
-            st.markdown('<div class="sb-divider"></div>', unsafe_allow_html=True)
-            if not _sc:
-                st.markdown('<div class="sb-section">Navigation</div>', unsafe_allow_html=True)
-            _nav_icons = {"🏠 Vue d'ensemble":"🏠","🎯 Finition":"🎯","🛡️ Pressing":"🛡️","🔁 En possession":"🔁","📅 Analyse par match":"📅"}
-            page = st.radio("Menu", NAV_COLLECTIF,
-                format_func=lambda x: _nav_icons.get(x,x) if _sc else x,
-                label_visibility="collapsed")
+            st.markdown(f"<span style='color:{MUTED};font-size:12px;'>📊 {n_m} matchs analysés</span>", unsafe_allow_html=True)
+            st.divider()
+            page = st.radio("Menu", NAV_COLLECTIF)
         elif mode == "👤 Joueur":
-            if not _sc:
-                st.markdown('<div class="sb-section">Saison</div>', unsafe_allow_html=True)
-            saison_label_j = st.selectbox("🏆 Saison", list(comp_opts.keys()),
-                label_visibility="collapsed" if _sc else "visible")
-            st.markdown('<div class="sb-divider"></div>', unsafe_allow_html=True)
-            if not _sc:
-                st.markdown('<div class="sb-section">Joueur</div>', unsafe_allow_html=True)
+            saison_label_j = st.selectbox("🏆 Saison", list(comp_opts.keys()))
+            st.divider()
+            st.markdown(f"<div style='font-size:11px;color:{MUTED};text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;'>Joueur</div>", unsafe_allow_html=True)
             joueur_sel = st.radio("", ALL_PLAYERS, label_visibility="collapsed")
-            st.markdown('<div class="sb-divider"></div>', unsafe_allow_html=True)
+            st.divider()
             df_j = players_all[joueur_sel].copy()
             df_played_all = df_j[df_j["Minutes played"]>20].sort_values("Journée").reset_index(drop=True)
             match_labels_j = [str(r["Journée"]) for _,r in df_played_all.iterrows()]
-            if not _sc:
-                selected_j = st.multiselect("Filtrer les matchs", match_labels_j, default=[])
-            else:
-                selected_j = []
+            selected_j = st.multiselect("Filtrer les matchs", match_labels_j, default=[])
             if selected_j:
                 df_joueur = df_played_all[df_played_all["Journée"].isin(selected_j)].reset_index(drop=True)
             else:
@@ -963,8 +888,8 @@ elif mode=="👤 Joueur":
     c1,c2,c3,c4,c5,c6=st.columns(6)
     def pk(col,label,val,color=TEXT):
         col.markdown(f'<div class="kpi"><div class="kpi-label">{label}</div><div class="kpi-value" style="color:{color};">{val}</div></div>',unsafe_allow_html=True)
-    pk(c1,"Matchs",n_m_j); pk(c2,"Minutes",minutes_j); pk(c3,"Min / Match",min_per_match)
-    pk(c4,"Buts",buts_j); pk(c5,"Passes déc.",assists_j); pk(c6,"🟨 Jaunes",yc_j,GOLD)
+    pk(c1,"🎽 Matchs",n_m_j); pk(c2,"🕰️ Minutes",minutes_j); pk(c3,"⏱️ Min / Match",min_per_match)
+    pk(c4,"⚽️ Buts",buts_j); pk(c5,"🎯 Passes déc.",assists_j); pk(c6,"🟨 Jaunes",yc_j,GOLD)
     st.markdown("")
 
     def qty_bar(label,val,max_val,color="#4499ff"):
@@ -984,10 +909,10 @@ elif mode=="👤 Joueur":
         pw=max(int(pass_w),1)
         h='<div class="sc"><div class="sct">🏗️ Construction</div>'
         h+=sr("Passes / match",pass_pm)+sr("Passes reçues",rec_passes)+sr("Passes réussies",int(pass_w),GREEN)
-        h+=qty_bar("Passes vers l'avant",fp_w,pw,"#4499ff")
-        h+=qty_bar("Passes vers l'arrière",bp_w,pw,"#ff2d55")
-        h+=qty_bar("Passes vers le dernier tiers",ptf_w,pw,"#4499ff")
-        h+=qty_bar("Passes longues",long_w,pw,"#ff8800")
+        h+=qty_bar("Passes vers l'avant",fp_w,pw,"#4488ff")
+        h+=qty_bar("Passes vers l'arrière",bp_w,pw,"#4488ff")
+        h+=qty_bar("Passes vers le dernier tiers",ptf_w,pw,"#4488ff")
+        h+=qty_bar("Passes longues",long_w,pw,"#4488ff")
         h+='</div>'
         st.markdown(h,unsafe_allow_html=True)
     with col2:
