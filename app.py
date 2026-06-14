@@ -68,11 +68,13 @@ st.markdown(f"""<style>
   .sct {{font-size:11px;font-weight:600;color:#C9A84C;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;}}
   .bt {{height:3px;background:rgba(255,255,255,0.08);border-radius:2px;margin-top:3px;}}
   [data-testid="stDataFrame"] {{background:{CARD};}}
-  [data-testid="collapsedControl"] {{display:none !important;visibility:hidden !important;width:0 !important;}}
+  /* Cache uniquement le texte keyboard dans le header, pas la sidebar */
+  [data-testid="stHeader"] {{background:transparent !important; height:0 !important; min-height:0 !important;}}
+  [data-testid="collapsedControl"] {{display:none !important;}}
   button[kind="header"] {{display:none !important;}}
   .st-emotion-cache-1dp5vir {{display:none !important;}}
   /* Décale le contenu principal sous le header Streamlit */
-  .block-container {{padding-top:3.5rem !important;}}
+  .block-container {{padding-top:0.5rem !important;}}
   /* NAV HORIZONTALE */
   .nav-bar {{display:flex;align-items:center;gap:6px;padding:10px 0 14px 0;flex-wrap:wrap;}}
   .nav-logo {{height:36px;width:auto;margin-right:10px;}}
@@ -330,49 +332,163 @@ COMP_LABELS = {
 }
 if "nav_mode" not in st.session_state: st.session_state.nav_mode = "⚽ Collectif"
 if "nav_page" not in st.session_state: st.session_state.nav_page = "🏠 Vue d'ensemble"
+if "sidebar_collapsed" not in st.session_state: st.session_state.sidebar_collapsed = False
+
+_sc = st.session_state.sidebar_collapsed
+_sw = "58px" if _sc else "240px"
+
+st.markdown(f"""<style>
+section[data-testid="stSidebar"] {{
+    min-width:{_sw}!important; max-width:{_sw}!important;
+}}
+section[data-testid="stSidebar"] > div:first-child {{
+    background:#0d1117!important; padding:0!important;
+    border-right:1px solid #1e2733!important;
+}}
+[data-testid="stSidebarContent"] {{background:#0d1117!important;padding:0!important;}}
+[data-testid="stSidebarUserContent"] {{padding-top:0!important;margin-top:0!important;}}
+[data-testid="collapsedControl"] {{display:none!important;}}
+button[kind="header"] {{display:none!important;}}
+
+/* Toggle */
+#sb-toggle button {{
+    background:rgba(255,255,255,0.06)!important;
+    border:1px solid rgba(255,255,255,0.1)!important;
+    border-radius:6px!important;
+    color:#ccc!important; font-size:14px!important; font-weight:700!important;
+    padding:3px 10px!important; min-height:0!important;
+    box-shadow:none!important; width:auto!important;
+}}
+#sb-toggle button:hover {{ color:#fff!important; background:rgba(255,255,255,0.12)!important; }}
+#sb-toggle {{ display:flex; justify-content:flex-end; padding:6px 8px 4px 8px; }}
+
+/* Boutons nav */
+section[data-testid="stSidebar"] .stButton {{margin:0!important;padding:0 6px!important;}}
+section[data-testid="stSidebar"] .stButton button {{
+    background:transparent!important;
+    border:none!important; border-radius:6px!important;
+    color:#8b9eb8!important;
+    font-size:{'18px' if _sc else '13px'}!important; font-weight:500!important;
+    padding:{'10px 4px' if _sc else '9px 12px'}!important;
+    min-height:0!important; width:100%!important;
+    transition:background 0.15s,color 0.15s!important;
+    justify-content:{'center' if _sc else 'flex-start'}!important;
+    display:flex!important; align-items:center!important;
+    gap:10px!important; box-shadow:none!important;
+}}
+section[data-testid="stSidebar"] .stButton button:hover {{
+    background:rgba(255,255,255,0.06)!important; color:#fff!important;
+}}
+section[data-testid="stSidebar"] .stButton button p {{
+    font-size:{'18px' if _sc else '13px'}!important; font-weight:500!important;
+    text-align:{'center' if _sc else 'left'}!important;
+    margin:0!important; color:inherit!important;
+}}
+
+/* Menus déroulants */
+[data-baseweb="select"] > div {{background:#0d1e35!important;border-color:#1e3a5f!important;color:#fff!important;}}
+[data-baseweb="select"] span {{color:#fff!important;}}
+[data-baseweb="popover"] {{background:#0d1e35!important;}}
+[data-baseweb="menu"] {{background:#0d1e35!important;}}
+[data-baseweb="option"] {{background:#0d1e35!important;color:#cde!important;}}
+[data-baseweb="option"]:hover {{background:#1a3050!important;}}
+[data-baseweb="tag"] {{background:#1a3a60!important;color:#fff!important;}}
+
+/* St.tabs pill */
+.stTabs [data-baseweb="tab-list"] {{
+    gap:6px!important; background:#131c2b!important;
+    border:1px solid #1e2d42!important; border-radius:10px!important;
+    padding:4px!important; flex-wrap:wrap!important;
+}}
+.stTabs [data-baseweb="tab"] {{
+    background:transparent!important; border:none!important;
+    border-radius:7px!important; color:#8b9eb8!important;
+    font-size:12px!important; font-weight:600!important; padding:6px 12px!important;
+    white-space:nowrap!important;
+}}
+.stTabs [data-baseweb="tab"]:hover {{background:rgba(255,255,255,0.06)!important;color:#fff!important;}}
+.stTabs [aria-selected="true"] {{background:#2563eb!important;color:#fff!important;border:none!important;}}
+.stTabs [data-baseweb="tab-panel"] {{padding-top:14px!important;}}
+.stTabs [data-baseweb="tab-highlight"] {{display:none!important;}}
+</style>""", unsafe_allow_html=True)
 
 # ── SIDEBAR ──
 with st.sidebar:
     logo_path_sb = Path(__file__).parent / "logo.png"
     if logo_path_sb.exists():
-        col_l,col_c,col_r=st.columns([1,2,1])
-        col_c.image(str(logo_path_sb),width=120)
-    st.markdown("<div style='font-size:19px;font-weight:800;color:#ffffff;margin:4px 0 6px 0;text-align:center;'>US Thionville Lusitanos</div>", unsafe_allow_html=True)
-    st.divider()
-    mode_sb = st.radio("", ["⚽ Collectif", "👤 Joueur", "📊 KPI'S LIGUE 3"],
-        index=["⚽ Collectif","👤 Joueur","📊 KPI'S LIGUE 3"].index(st.session_state.nav_mode),
-        label_visibility="collapsed")
-    if mode_sb != st.session_state.nav_mode:
-        st.session_state.nav_mode = mode_sb
-        st.rerun()
-    mode = st.session_state.nav_mode
-    st.divider()
+        import base64 as _b64sb
+        with open(str(logo_path_sb),"rb") as _lf: _lb64 = _b64sb.b64encode(_lf.read()).decode()
+        _lsrc = f'data:image/png;base64,{_lb64}'
+    else:
+        _lsrc = ""
 
-if mode in ("⚽ Collectif", "👤 Joueur"):
-    with st.sidebar:
-        comps = sorted(gen_all["Competition"].dropna().unique().tolist())
-        comp_opts = {COMP_LABELS.get(c,c):c for c in comps}
-        if mode == "⚽ Collectif":
-            saison_label = st.selectbox("🏆 Saison", list(comp_opts.keys()))
-            saison_comp  = comp_opts[saison_label]
-            n_m = len(gen_all[(gen_all["Competition"]==saison_comp)&(gen_all["Team"]==TEAM)])
-            st.markdown(f"<span style='color:{MUTED};font-size:12px;'>📊 {n_m} matchs analysés</span>", unsafe_allow_html=True)
-            st.divider()
-            page = st.radio("Menu", NAV_COLLECTIF)
-        elif mode == "👤 Joueur":
-            saison_label_j = st.selectbox("🏆 Saison", list(comp_opts.keys()))
-            st.divider()
-            st.markdown(f"<div style='font-size:11px;color:{MUTED};text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;'>Joueur</div>", unsafe_allow_html=True)
-            joueur_sel = st.radio("", ALL_PLAYERS, label_visibility="collapsed")
-            st.divider()
-            df_j = players_all[joueur_sel].copy()
-            df_played_all = df_j[df_j["Minutes played"]>20].sort_values("Journée").reset_index(drop=True)
-            match_labels_j = [str(r["Journée"]) for _,r in df_played_all.iterrows()]
-            selected_j = st.multiselect("Filtrer les matchs", match_labels_j, default=[])
-            if selected_j:
-                df_joueur = df_played_all[df_played_all["Journée"].isin(selected_j)].reset_index(drop=True)
-            else:
-                df_joueur = df_played_all.copy()
+    # Toggle toujours visible — pas de colonnes, juste un div aligné à droite
+    st.markdown('<div id="sb-toggle">', unsafe_allow_html=True)
+    if st.button("›" if _sc else "‹", key="sb_toggle"):
+        st.session_state.sidebar_collapsed = not _sc
+        st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # Logo + titre
+    if _sc:
+        if _lsrc:
+            st.markdown(f'<div style="text-align:center;padding:2px 0 8px 0;"><img src="{_lsrc}" style="height:30px;width:auto;"/></div>', unsafe_allow_html=True)
+    else:
+        logo_html = f'<img src="{_lsrc}" style="height:42px;width:auto;"/>' if _lsrc else ''
+        st.markdown(f'<div style="text-align:center;padding:2px 10px 10px 10px;">{logo_html}<div style="font-size:13px;font-weight:900;color:#fff;margin-top:7px;">US Thionville Lusitanos</div></div>', unsafe_allow_html=True)
+
+    st.markdown('<hr style="border:none;border-top:1px solid #1e2733;margin:0 0 4px 0;"/>', unsafe_allow_html=True)
+
+    # Items nav
+    _modes  = ["⚽ Collectif", "👤 Joueur", "📊 KPI'S LIGUE 3"]
+    _labels = ["Analyse collective", "Analyse individuelle", "Indicateurs L3"]
+    _icons  = ["👥", "👤", "📊"]
+
+    for i, (mode_key, label, icon) in enumerate(zip(_modes, _labels, _icons)):
+        btn_lbl = icon if _sc else f"{icon}   {label}"
+        if st.button(btn_lbl, key=f"sb_mode_{i}", use_container_width=True):
+            st.session_state.nav_mode = mode_key
+            st.rerun()
+
+mode = st.session_state.nav_mode
+
+# ── CONTRÔLES EN HAUT DE PAGE ──
+comps = sorted(gen_all["Competition"].dropna().unique().tolist())
+comp_opts = {COMP_LABELS.get(c,c):c for c in comps}
+
+if mode == "⚽ Collectif":
+    _ctrl_cols = st.columns([2, 1, 7])
+    with _ctrl_cols[0]:
+        saison_label = st.selectbox("🏆 Saison", list(comp_opts.keys()), label_visibility="visible")
+    saison_comp = comp_opts[saison_label]
+    n_m = len(gen_all[(gen_all["Competition"]==saison_comp)&(gen_all["Team"]==TEAM)])
+    with _ctrl_cols[1]:
+        st.markdown(f"""<div style='
+            display:flex;align-items:center;
+            height:38px;margin-top:28px;
+            background:#0d1e35;border:1px solid #1e3a5f;
+            border-radius:6px;padding:0 10px;
+            font-size:12px;color:{MUTED};white-space:nowrap;
+        '>📊 {n_m} matchs</div>""", unsafe_allow_html=True)
+
+elif mode == "👤 Joueur":
+    _ctrl_cols = st.columns([2,3,5])
+    with _ctrl_cols[0]:
+        saison_label_j = st.selectbox("🏆 Saison", list(comp_opts.keys()), label_visibility="visible")
+    with _ctrl_cols[1]:
+        joueur_sel = st.selectbox("👤 Joueur", ALL_PLAYERS, label_visibility="visible")
+    df_j = players_all[joueur_sel].copy()
+    df_played_all = df_j[df_j["Minutes played"]>20].sort_values("Journée").reset_index(drop=True)
+    match_labels_j = [str(r["Journée"]) for _,r in df_played_all.iterrows()]
+    with _ctrl_cols[2]:
+        selected_j = st.multiselect("🗓️ Filtrer les matchs", match_labels_j, default=[],
+                                    placeholder="Sélectionnez un/des match(s)",
+                                    label_visibility="visible")
+    if selected_j:
+        df_joueur = df_played_all[df_played_all["Journée"].isin(selected_j)].reset_index(drop=True)
+    else:
+        df_joueur = df_played_all.copy()
+    st.markdown('<hr style="border:none;border-top:1px solid #1e2733;margin:8px 0 12px 0;"/>', unsafe_allow_html=True)
 
 if mode == "⚽ Collectif":
     def fc(df): return df[df["Competition"]==saison_comp].copy()
@@ -416,7 +532,7 @@ if mode == "📊 KPI'S LIGUE 3":
     st.markdown("""
     <div style="margin-bottom:20px;">
       <div style="font-size:11px;font-weight:600;color:#C9A84C;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">Référentiel</div>
-      <div style="font-size:26px;font-weight:900;color:#fff;letter-spacing:1px;">KPI'S LIGUE 3</div>
+      <div style="font-size:26px;font-weight:900;color:#fff;letter-spacing:1px;">Indicateurs L3</div>
       <div style="font-size:13px;color:#8b949e;margin-top:2px;">7 indicateurs différenciants — Championnat National 1 · Saison 2025-26</div>
     </div>
     """, unsafe_allow_html=True)
@@ -877,7 +993,7 @@ elif mode=="👤 Joueur":
     </div>""",unsafe_allow_html=True)
 
     st.markdown(f"""<div style="background:#1E2733;border:1px solid rgba(201,168,76,0.3);border-radius:10px;padding:10px 16px;margin-bottom:10px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
-      <div style="text-align:center;"><div style="font-size:9px;color:{MUTED};text-transform:uppercase;">Total actions</div><div style="font-size:24px;font-weight:900;">{int(ta_t)}</div></div>
+      <div style="text-align:center;"><div style="font-size:9px;color:{MUTED};text-transform:uppercase;">Total actions</div><div style="font-size:24px;font-weight:900;color:#ffffff;">{int(ta_t)}</div></div>
       <div style="width:1px;height:30px;background:{BORD};"></div>
       <div style="text-align:center;"><div style="font-size:9px;color:{MUTED};text-transform:uppercase;">Réussies</div><div style="font-size:24px;font-weight:900;color:{GREEN};">{int(ta_w)}</div></div>
       <div style="width:1px;height:30px;background:{BORD};"></div>
@@ -1036,8 +1152,9 @@ elif mode=="👤 Joueur":
 # MODE COLLECTIF
 # ══════════════════════════════════════════════════════════════════════════════
 elif mode=="⚽ Collectif":
+    _tab_vue, _tab_fin, _tab_pre, _tab_pos, _tab_match = st.tabs(NAV_COLLECTIF)
 
-    if page=="🏠 Vue d'ensemble":
+    with _tab_vue:
         st.markdown(f"# 🏠 Vue d'ensemble — {saison_label}")
         section("Résultats")
         cols_res=st.columns(len(thi_gen))
@@ -1094,7 +1211,7 @@ elif mode=="⚽ Collectif":
         f2.update_layout(**lyt(),barmode="group",height=370); f2.update_yaxes(gridcolor=BORD)
         st.plotly_chart(f2,use_container_width=True)
 
-    elif page=="🎯 Finition":
+    with _tab_fin:
         st.markdown(f"# 🎯 Finition — {saison_label}")
         c1,c2,c3,c4=st.columns(4)
         kpi(c1,"⚽ Buts / m",thi_gen["Goals"].mean(),adv_gen["Goals"].mean(),fmt=".2f")
@@ -1143,7 +1260,7 @@ elif mode=="⚽ Collectif":
         f13.update_layout(**lyt(),barmode="overlay",height=340); f13.update_yaxes(gridcolor=BORD)
         st.plotly_chart(f13,use_container_width=True)
 
-    elif page=="🛡️ Pressing":
+    with _tab_pre:
         st.markdown(f"# 🛡️ Pressing — {saison_label}")
         c1,c2,c3,c4,c5=st.columns(5)
         kpi(c1,"🚫 Concédés / m",thi_def["Conceded goals"].mean(),None,fmt=".2f",inverse=True)
@@ -1208,7 +1325,7 @@ elif mode=="⚽ Collectif":
         f18.update_layout(**lyt(),barmode="group",height=360,yaxis2=dict(overlaying="y",side="right",showgrid=False,color=TEXT)); f18.update_yaxes(gridcolor=BORD)
         st.plotly_chart(f18,use_container_width=True)
 
-    elif page=="🔁 En possession":
+    with _tab_pos:
         st.markdown(f"# 🔁 En possession — {saison_label}")
         section("Pertes de balle par zone — par journée")
         loss_rows=get_pitch_data(thi_gen,adv_names,journees,"Losses Low ","Losses Medium","Losses High","Losses")
@@ -1248,7 +1365,7 @@ elif mode=="⚽ Collectif":
         f24=go.Figure(); f24=pct_bar_overlay(f24,journees_adv,thi_pass["Progressive passes"],thi_pass["Progressive passes accurate"],"Total","Réussies","rgba(158,158,158,.35)",GREY)
         f24.update_layout(**lyt(),barmode="overlay",height=330); f24.update_yaxes(gridcolor=BORD); st.plotly_chart(f24,use_container_width=True,key="poss_f24")
 
-    elif page=="📅 Analyse par match":
+    with _tab_match:
         st.markdown("# 📅 Analyse par match")
         mo={journees[i]:thi_gen.iloc[i]["Match"] for i in range(len(thi_gen))}
         js=st.selectbox("Sélectionner une journée",list(mo.keys()),format_func=lambda j:f"{j} — vs {adv_names[journees.index(j)]}")
