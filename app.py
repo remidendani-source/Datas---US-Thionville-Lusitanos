@@ -46,6 +46,11 @@ players_all = load_players(FICHIER)
 DARK="#000000";CARD="#111111";BORD="#2a2a2a";TEXT="#ffffff";MUTED="#8b949e"
 GREY="#9e9e9e";RED="#ff2d55";GREEN="#00ff88";GOLD="#ffd60a";GOLD2="#C9A84C"
 
+st.markdown("""<style>
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@400;500;600;700;800&display=swap');
+* { font-family: 'Barlow', sans-serif !important; }
+h1,h2,h3 { font-family: 'Barlow Condensed', sans-serif !important; font-weight:900 !important; letter-spacing:-0.5px; }
+</style>""", unsafe_allow_html=True)
 st.markdown(f"""<style>
   .stApp,.main,[data-testid="stAppViewContainer"],[data-testid="stHeader"],
   section[data-testid="stSidebar"],[data-testid="stSidebarContent"]
@@ -63,7 +68,9 @@ st.markdown(f"""<style>
   .sct {{font-size:11px;font-weight:600;color:#C9A84C;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;}}
   .bt {{height:3px;background:rgba(255,255,255,0.08);border-radius:2px;margin-top:3px;}}
   [data-testid="stDataFrame"] {{background:{CARD};}}
-  [data-testid="collapsedControl"] {{display:none !important;}}
+  [data-testid="collapsedControl"] {{display:none !important;visibility:hidden !important;width:0 !important;}}
+  button[kind="header"] {{display:none !important;}}
+  .st-emotion-cache-1dp5vir {{display:none !important;}}
   /* Décale le contenu principal sous le header Streamlit */
   .block-container {{padding-top:3.5rem !important;}}
   /* NAV HORIZONTALE */
@@ -99,8 +106,8 @@ def pct_bar_overlay(fig,x,yt,yr,nt,nr,ct,cr):
     pct=(yr/yt.replace(0,float("nan"))*100).round(1)
     fig.add_trace(go.Bar(x=x,y=yt,name=nt,marker_color=ct))
     fig.add_trace(go.Bar(x=x,y=yr,name=nr,marker_color=cr,
-        text=[f"{v}%" for v in pct],textposition="inside",insidetextanchor="middle",
-        textfont=dict(color=DARK,size=11,family="Arial Black")))
+        text=[f"{v}%" for v in pct],textposition="outside",
+        textfont=dict(color="#ffffff",size=11)))
     return fig
 
 def mirror_row(label,tv,av,tm,am,pct=False):
@@ -164,7 +171,7 @@ def get_player_cols(df):
         "yc": yc, "rc": rc,
     }
 
-def make_pitch_svg(ph,pm,pl,color,journee="",adversaire="",width=190,height=300):
+def make_pitch_svg(ph,pm,pl,color,journee="",adversaire="",width=190,height=370):
     def op(p): return round(0.10+(p/100)*0.65,2)
     H,W=height,width; zh=H//3
     gw=int(W*0.62);gh=int(H*0.15);gx=(W-gw)//2
@@ -204,82 +211,8 @@ def make_pitch_svg(ph,pm,pl,color,journee="",adversaire="",width=190,height=300)
     s+='</svg>'
     return s
 
-def make_pass_svg(fp_r,bp_r,long_r,tp_r,ptf_r,ppa_r,total_w,width=320,height=430,poste="DC"):
-    import math
-    W,H=width,height
-    cx=W//2; cy=H//2
-    gw=int(W*0.55); gh=int(H*0.14); gx=(W-gw)//2
-    sw=int(W*0.34); sh=int(H*0.055); sx=(W-sw)//2
-    bw=int(W*0.18); bh=int(H*0.022); bx=(W-bw)//2
-    cr=int(min(W,H)*0.11)
-    tiers_h=int(H*0.32)
-    poste_y={"DC":0.68,"DL":0.64,"DR":0.64,"MC":0.50,"MDF":0.50,"MO":0.44,"ATT":0.33,"GK":0.82}
-    px=cx; py=int(10+H*poste_y.get(poste,0.68))
-    L_short=int(H*0.22); L_long=int(H*0.30)
-    svg=[]
-    svg.append(f'<svg width="{W}" height="{H+20}" viewBox="0 0 {W} {H+20}" xmlns="http://www.w3.org/2000/svg">')
-    svg.append(f'<rect x="0" y="10" width="{W}" height="{H}" fill="#1e4d14"/>')
-    for i in range(9):
-        if i%2==0: svg.append(f'<rect x="0" y="{10+i*H//9}" width="{W}" height="{H//9}" fill="#1a4511"/>')
-    svg.append(f'<rect x="0" y="10" width="{W}" height="{tiers_h}" fill="rgba(40,90,200,0.18)"/>')
-    svg.append(f'<rect x="{gx}" y="10" width="{gw}" height="{gh}" fill="rgba(140,30,200,0.25)"/>')
-    svg.append(f'<rect x="0" y="10" width="{W}" height="{H}" fill="none" stroke="white" stroke-width="2" stroke-opacity="0.5"/>')
-    svg.append(f'<line x1="0" y1="{10+cy}" x2="{W}" y2="{10+cy}" stroke="white" stroke-width="1.5" stroke-opacity="0.5"/>')
-    svg.append(f'<circle cx="{cx}" cy="{10+cy}" r="{cr}" fill="none" stroke="white" stroke-width="1.5" stroke-opacity="0.5"/>')
-    svg.append(f'<circle cx="{cx}" cy="{10+cy}" r="2.5" fill="white" opacity="0.4"/>')
-    svg.append(f'<rect x="{gx}" y="10" width="{gw}" height="{gh}" fill="none" stroke="white" stroke-width="1.5" stroke-opacity="0.5"/>')
-    svg.append(f'<rect x="{sx}" y="10" width="{sw}" height="{sh}" fill="none" stroke="white" stroke-width="1.5" stroke-opacity="0.5"/>')
-    svg.append(f'<rect x="{bx}" y="{10-bh}" width="{bw}" height="{bh}" fill="none" stroke="white" stroke-width="1.5" stroke-opacity="0.5"/>')
-    svg.append(f'<circle cx="{cx}" cy="{10+int(gh*0.55)}" r="2" fill="white" opacity="0.4"/>')
-    svg.append(f'<rect x="{gx}" y="{10+H-gh}" width="{gw}" height="{gh}" fill="none" stroke="white" stroke-width="1.5" stroke-opacity="0.5"/>')
-    svg.append(f'<rect x="{sx}" y="{10+H-sh}" width="{sw}" height="{sh}" fill="none" stroke="white" stroke-width="1.5" stroke-opacity="0.5"/>')
-    svg.append(f'<rect x="{bx}" y="{10+H}" width="{bw}" height="{bh}" fill="none" stroke="white" stroke-width="1.5" stroke-opacity="0.5"/>')
-    svg.append(f'<circle cx="{cx}" cy="{10+int(H-gh*0.55)}" r="2" fill="white" opacity="0.4"/>')
-    def arrow(x1,y1,x2,y2,color,dash=False,width=2.5,label="",label_x=None,label_y=None):
-        dx=x2-x1; dy=y2-y1; length=math.sqrt(dx*dx+dy*dy)
-        if length==0: return ""
-        ux=dx/length; uy=dy/length
-        ax=x2-ux*10; ay=y2-uy*10
-        px2=-uy*5; py2=ux*5
-        d=f"M {x1} {y1} L {x2} {y2}"
-        da='stroke-dasharray="8,4"' if dash else ""
-        s=f'<path d="{d}" stroke="{color}" stroke-width="{width}" fill="none" {da} stroke-opacity="0.85"/>'
-        s+=f'<polygon points="{x2},{y2} {ax+px2},{ay+py2} {ax-px2},{ay-py2}" fill="{color}" opacity="0.85"/>'
-        if label:
-            lx=label_x if label_x else (x1+x2)//2+8
-            ly=label_y if label_y else (y1+y2)//2
-            s+=f'<rect x="{lx-14}" y="{ly-9}" width="28" height="14" rx="3" fill="rgba(0,0,0,0.7)"/>'
-            s+=f'<text x="{lx}" y="{ly+1}" text-anchor="middle" font-family="Arial,sans-serif" font-size="9" font-weight="700" fill="{color}">{label}%</text>'
-        return s
-    fwd_x=px-30; bwd_x=px+30
-    # Long: décalé à gauche du centre (px-12)
-    # Surface (ppa): décalé à droite (px+18) pour ne pas chevaucher Long
-    long_x = px - 12
-    ppa_x  = px + 18
-    svg.append(arrow(fwd_x,py,fwd_x,py-L_short,"#4488ff",label=f"{fp_r:.0f}",label_x=fwd_x-22,label_y=py-L_short//2))
-    svg.append(arrow(bwd_x,py,bwd_x,py+int(L_short*0.7),"#ff3355",label=f"{bp_r:.0f}",label_x=bwd_x+22,label_y=py+int(L_short*0.4)))
-    svg.append(arrow(long_x,py,long_x,py-L_long,"#ff8800",dash=True,label=f"{long_r:.0f}",label_x=long_x-22,label_y=py-L_long//2))
-    svg.append(arrow(px-10,py-10,px-10,py-int(L_long*1.1),"#ffdd00",dash=True,label=f"{tp_r:.0f}",label_x=px-32,label_y=py-int(L_long*0.55)))
-    if ptf_r>0:
-        # Pour DC/DL/DR: la flèche va jusqu'au bord de la zone tiers final (10+tiers_h)
-        if poste in ("DC","DL","DR","GK"):
-            ty = 10 + tiers_h
-        else:
-            ty = max(10+tiers_h-10, py-int(L_short*1.2))
-        svg.append(arrow(px+15,py,px+15,ty,"#22ddaa",label=f"{ptf_r:.0f}",label_x=px+37,label_y=(py+ty)//2))
-    if ppa_r>0:
-        gy=10+gh+5
-        svg.append(arrow(ppa_x,py,ppa_x,gy,"#cc44ff",label=f"{ppa_r:.0f}",label_x=ppa_x+22,label_y=py-int((py-gy)*0.5)))
-    svg.append(f'<circle cx="{px}" cy="{py}" r="7" fill="#ffffff" stroke="#000" stroke-width="1.5"/>')
-    svg.append(f'<text x="{px}" y="{py+4}" text-anchor="middle" font-family="Arial,sans-serif" font-size="8" font-weight="700" fill="#000">{poste}</text>')
-    legend_y=H+20-6
-    items=[("#4488ff","→ Avant"),("#ff3355","← Arrière"),("#ff8800","Long"),("#ffdd00","Profond"),("#22ddaa","T.Final"),("#cc44ff","Surface")]
-    lx=4
-    for color,lbl in items:
-        svg.append(f'<text x="{lx+4}" y="{legend_y+4}" font-family="Arial,sans-serif" font-size="8" fill="#ccc">{lbl}</text>')
-        lx+=W//6
-    svg.append('</svg>')
-    return "".join(svg)
+
+
 
 def get_pitch_data(df_gen,adv_names_list,journees_list,col_low,col_med,col_high,col_total):
     rows=[]
@@ -296,23 +229,99 @@ def render_pitches(rows,color,per_row=4):
         for j,r in enumerate(chunk):
             cols[j].markdown(make_pitch_svg(r["high"],r["med"],r["low"],color,r["journee"],r["adversaire"]),unsafe_allow_html=True)
 
-# ══════════════════════════════════════════════════════════════════════════════
-# NAVIGATION
-# ══════════════════════════════════════════════════════════════════════════════
-logo_path = Path(__file__).parent / "logo.png"
+def make_pass_svg(fp_r,bp_r,long_r,tp_r,ptf_r,ppa_r,total_w,width=480,height=370,poste="DC",
+                  long_pct=50,ptf_pct=55,ppa_pct=47,crosses_pct=26):
+    import math
+    W,H=width,height
+    TC="#1c2f50"; TL="rgba(255,255,255,0.5)"; ARR="#1de8b5"; VC="#4dd9f5"; PC="#1de8b5"; RD="#ff4466"
+    pad=18; tw=W-2*pad; th=H-2*pad; cx=pad+tw//2; cy=pad+th//2; mx=pad+tw//2
+    bh=int(th*0.28); bw=11; by=cy-bh//2
+    srw=int(tw*0.17); srh=int(th*0.54); srx=pad+tw-srw; sry=cy-srh//2
+    sbw=int(tw*0.065); sbh=int(th*0.27); sbx=pad+tw-sbw; sby=cy-sbh//2
+    cr=int(min(tw,th)*0.13); tfx=pad+int(tw*0.67)
+    # Flèche double sens : moitié gauche du terrain, milieu vertical
+    mid_x = pad+int(tw*0.22)   # centre de la flèche
+    half  = int(tw*0.16)        # demi-longueur
+    zx1   = mid_x - half        # bout gauche (arrière = rouge)
+    zx2   = mid_x + half        # bout droit  (avant  = vert)
+    zy    = cy
+    s=[]
+    def S(t): s.append(t)
+    S(f'<svg width="{W}" height="{H}" viewBox="0 0 {W} {H}" xmlns="http://www.w3.org/2000/svg">')
+    S(f'<rect width="{W}" height="{H}" fill="#0d1117" rx="8"/>')
+    S(f'<rect x="{pad}" y="{pad}" width="{tw}" height="{th}" fill="{TC}" rx="3"/>')
+    for i in range(6):
+        if i%2==0: S(f'<rect x="{pad}" y="{pad+i*th//6}" width="{tw}" height="{th//6}" fill="rgba(255,255,255,0.025)"/>')
+    S(f'<rect x="{pad}" y="{pad}" width="{tw}" height="{th}" fill="none" stroke="{TL}" stroke-width="1.5"/>')
+    S(f'<line x1="{mx}" y1="{pad}" x2="{mx}" y2="{pad+th}" stroke="{TL}" stroke-width="1.2"/>')
+    S(f'<circle cx="{cx}" cy="{cy}" r="{cr}" fill="none" stroke="{TL}" stroke-width="1.2"/>')
+    S(f'<rect x="{pad}" y="{sry}" width="{srw}" height="{srh}" fill="none" stroke="{TL}" stroke-width="1.2"/>')
+    S(f'<rect x="{pad}" y="{sby}" width="{sbw}" height="{sbh}" fill="none" stroke="{TL}" stroke-width="1.2"/>')
+    S(f'<rect x="{pad-bw}" y="{by}" width="{bw}" height="{bh}" fill="none" stroke="{TL}" stroke-width="1.5"/>')
+    S(f'<rect x="{srx}" y="{sry}" width="{srw}" height="{srh}" fill="none" stroke="{TL}" stroke-width="1.2"/>')
+    S(f'<rect x="{sbx}" y="{sby}" width="{sbw}" height="{sbh}" fill="none" stroke="{TL}" stroke-width="1.2"/>')
+    S(f'<rect x="{pad+tw}" y="{by}" width="{bw}" height="{bh}" fill="none" stroke="{TL}" stroke-width="1.5"/>')
+    S(f'<line x1="{tfx}" y1="{pad}" x2="{tfx}" y2="{pad+th}" stroke="rgba(255,255,255,0.3)" stroke-width="1" stroke-dasharray="5,3"/>')
+    sw=8; aw=int(sw*2); ah=int(sw*1.5)
+    # --- Flèche double sens : moitié gauche ROUGE (arrière), moitié droite VERTE (avant) ---
+    S(f'<line x1="{zx1+aw}" y1="{zy}" x2="{mid_x}" y2="{zy}" stroke="{RD}" stroke-width="{sw}" stroke-linecap="round"/>')
+    S(f'<polygon points="{zx1},{zy} {zx1+aw},{zy-ah//2} {zx1+aw},{zy+ah//2}" fill="{RD}"/>')
+    S(f'<line x1="{mid_x}" y1="{zy}" x2="{zx2-aw}" y2="{zy}" stroke="{ARR}" stroke-width="{sw}" stroke-linecap="round"/>')
+    S(f'<polygon points="{zx2},{zy} {zx2-aw},{zy-ah//2} {zx2-aw},{zy+ah//2}" fill="{ARR}"/>')
+    # labels sous la flèche
+    S(f'<text x="{zx1+6}" y="{zy+14}" text-anchor="start" font-family="Arial,sans-serif" font-size="9" fill="rgba(255,255,255,0.5)">arrière</text>')
+    S(f'<text x="{zx1+6}" y="{zy+25}" text-anchor="start" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="#ff7799">{bp_r:.1f}  {bp_r:.0f}%</text>')
+    S(f'<text x="{zx2-6}" y="{zy+14}" text-anchor="end" font-family="Arial,sans-serif" font-size="9" fill="rgba(255,255,255,0.5)">avant</text>')
+    S(f'<text x="{zx2-6}" y="{zy+25}" text-anchor="end" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="{VC}">{fp_r:.1f}  {fp_r:.0f}%</text>')
+    def arw(x1,y,x2,col,sw=8):
+        aw2=int(sw*2); ah2=int(sw*1.5)
+        t  = f'<line x1="{x1}" y1="{y}" x2="{x2-aw2}" y2="{y}" stroke="{col}" stroke-width="{sw}" stroke-linecap="round"/>'
+        t += f'<polygon points="{x2},{y} {x2-aw2},{y-ah2//2} {x2-aw2},{y+ah2//2}" fill="{col}"/>'
+        return t
+    def nm(x,y,n):
+        return f'<text x="{x}" y="{y-6}" text-anchor="middle" font-family="Arial,sans-serif" font-size="9" fill="rgba(255,255,255,0.5)">{n}</text>'
+    def lv(x1,y,x2,val,pct,col,pcol):
+        # val au départ (sous, à gauche), % à l'arrivée (sous, à droite)
+        t  = f'<text x="{x1+4}" y="{y+15}" text-anchor="start" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="{col}">{val}</text>'
+        t += f'<text x="{x2-4}" y="{y+15}" text-anchor="end" font-family="Arial,sans-serif" font-size="10" font-weight="700" fill="{pcol}">{pct}%</text>'
+        return t
+    # 2. Passes longues
+    ly=pad+int(th*0.14); lx1=mx; lx2=srx+int(srw*0.5)
+    S(arw(lx1,ly,lx2,ARR,8)); S(nm((lx1+lx2)//2,ly,"passes longues")); S(lv(lx1,ly,lx2,f"{long_r:.2f}",f"{long_pct:.0f}",VC,PC))
+    # 3. Passes dernier tiers — s'arrête avant la surface
+    py=pad+int(th*0.34); px1=tfx-int(tw*0.05); px2=srx-int(srw*0.1)
+    S(arw(px1,py,px2,ARR,8)); S(nm((px1+px2)//2,py,"passes dernier tiers")); S(lv(px1,py,px2,f"{ptf_r:.2f}",f"{ptf_pct:.0f}",VC,PC))
+    # 4. Passes vers surface
+    ay=pad+int(th*0.52); ax1=tfx+int(tw*0.02); ax2=sbx
+    S(arw(ax1,ay,ax2,ARR,8)); S(nm((ax1+ax2)//2,ay,"passes vers surface")); S(lv(ax1,ay,ax2,f"{ppa_r:.2f}",f"{ppa_pct:.0f}",VC,PC))
+    # 5. Centres — flèche diagonale bas-milieu → surface de but
+    import math as _m
+    ccx1=tfx+int(tw*0.06); ccy1=pad+int(th*0.88)
+    ccx2=sbx+int(sbw*0.2); ccy2=pad+int(th*0.72)
+    ddx=ccx2-ccx1; ddy=ccy2-ccy1; le=_m.sqrt(ddx*ddx+ddy*ddy) or 1
+    uux=ddx/le; uuy=ddy/le; caw=18; cah=14
+    body_x=ccx2-uux*caw; body_y=ccy2-uuy*caw
+    S(f'<line x1="{ccx1}" y1="{ccy1}" x2="{body_x:.0f}" y2="{body_y:.0f}" stroke="{ARR}" stroke-width="8" stroke-linecap="round"/>')
+    aax=ccx2-uux*caw; aay=ccy2-uuy*caw
+    S(f'<polygon points="{ccx2:.0f},{ccy2:.0f} {aax-uuy*cah/2:.0f},{aay+uux*cah/2:.0f} {aax+uuy*cah/2:.0f},{aay-uux*cah/2:.0f}" fill="{ARR}"/>')
+    S(f'<text x="{ccx1}" y="{ccy1+14}" text-anchor="middle" font-family="Arial,sans-serif" font-size="9" fill="rgba(255,255,255,0.5)">centres</text>')
+    S(f'<text x="{ccx1}" y="{ccy1+26}" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="{VC}">{bp_r:.2f}</text>')
+    S(f'<text x="{ccx2+8:.0f}" y="{ccy2+4:.0f}" text-anchor="start" font-family="Arial,sans-serif" font-size="10" font-weight="700" fill="{PC}">{crosses_pct:.0f}%</text>')
+    S("</svg>")
+    return "".join(s)
 
 NAV_COLLECTIF = ["🏠 Vue d'ensemble","🎯 Finition","🛡️ Pressing","🔁 En possession","📅 Analyse par match"]
-
-if "nav_mode" not in st.session_state:
-    st.session_state.nav_mode = "⚽ Collectif"
-if "nav_page" not in st.session_state:
-    st.session_state.nav_page = "🏠 Vue d'ensemble"
-if "nav_joueur" not in st.session_state:
-    st.session_state.nav_joueur = ALL_PLAYERS[0]
-if "nav_saison" not in st.session_state:
-    comps_init = sorted(gen_all["Competition"].dropna().unique().tolist())
-    comp_opts_init = {COMP_LABELS.get(c,c):c for c in comps_init}
-    st.session_state.nav_saison = list(comp_opts_init.keys())[0]
+ALL_PLAYERS = [
+    "Muamer Aljic","Samir Bouzar","Cachito Wanduka","Marly Rampont","David Luvualu",
+    "Jérémy Lauratet","Samed Kilic","Jalil Moustaid","Clément Couturier",
+    "Bryan Labissière","Alexis Gouletquer","Karim Bouhmidi","Chafik Gourichy"
+]
+COMP_LABELS = {
+    "France. National 2": "National 2 · 2025-26",
+    "France. Ligue 3":    "Ligue 3 · 2026-27",
+}
+if "nav_mode" not in st.session_state: st.session_state.nav_mode = "⚽ Collectif"
+if "nav_page" not in st.session_state: st.session_state.nav_page = "🏠 Vue d'ensemble"
 
 # ── SIDEBAR ──
 with st.sidebar:
@@ -322,8 +331,9 @@ with st.sidebar:
         col_c.image(str(logo_path_sb),width=120)
     st.markdown("<div style='font-size:19px;font-weight:800;color:#ffffff;margin:4px 0 6px 0;text-align:center;'>US Thionville Lusitanos</div>", unsafe_allow_html=True)
     st.divider()
-    # Switcher mode dans la sidebar
-    mode_sb = st.radio("", ["⚽ Collectif", "👤 Joueur", "📊 KPI'S LIGUE 3"], index=["⚽ Collectif","👤 Joueur","📊 KPI'S LIGUE 3"].index(st.session_state.nav_mode), horizontal=False, label_visibility="collapsed")
+    mode_sb = st.radio("", ["⚽ Collectif", "👤 Joueur", "📊 KPI'S LIGUE 3"],
+        index=["⚽ Collectif","👤 Joueur","📊 KPI'S LIGUE 3"].index(st.session_state.nav_mode),
+        label_visibility="collapsed")
     if mode_sb != st.session_state.nav_mode:
         st.session_state.nav_mode = mode_sb
         st.rerun()
@@ -332,10 +342,8 @@ with st.sidebar:
 
 if mode in ("⚽ Collectif", "👤 Joueur"):
     with st.sidebar:
-
         comps = sorted(gen_all["Competition"].dropna().unique().tolist())
         comp_opts = {COMP_LABELS.get(c,c):c for c in comps}
-
         if mode == "⚽ Collectif":
             saison_label = st.selectbox("🏆 Saison", list(comp_opts.keys()))
             saison_comp  = comp_opts[saison_label]
@@ -343,7 +351,6 @@ if mode in ("⚽ Collectif", "👤 Joueur"):
             st.markdown(f"<span style='color:{MUTED};font-size:12px;'>📊 {n_m} matchs analysés</span>", unsafe_allow_html=True)
             st.divider()
             page = st.radio("Menu", NAV_COLLECTIF)
-
         elif mode == "👤 Joueur":
             saison_label_j = st.selectbox("🏆 Saison", list(comp_opts.keys()))
             st.divider()
@@ -359,12 +366,12 @@ if mode in ("⚽ Collectif", "👤 Joueur"):
             else:
                 df_joueur = df_played_all.copy()
 
-# ── Filtrage collectif ──
 if mode == "⚽ Collectif":
     def fc(df): return df[df["Competition"]==saison_comp].copy()
     gen=fc(gen_all);off=fc(off_all);defe=fc(defe_all);passe=fc(passe_all);idx=fc(idx_all)
     thi_gen=gen[gen["Team"]==TEAM].sort_values("Journée").reset_index(drop=True)
     adv_gen=gen[gen["Team"]!=TEAM].sort_values("Journée").reset_index(drop=True)
+
     thi_off=off[off["Team"]==TEAM].sort_values("Journée").reset_index(drop=True)
     adv_off=off[off["Team"]!=TEAM].sort_values("Journée").reset_index(drop=True)
     thi_def=defe[defe["Team"]==TEAM].sort_values("Journée").reset_index(drop=True)
@@ -812,14 +819,53 @@ elif mode=="👤 Joueur":
         _mime = "image/jpeg" if str(_found).lower().endswith(("jpg","jpeg")) else "image/png"
         photo_html = f'<img src="data:{_mime};base64,{_b}" style="height:200px;width:auto;object-fit:contain;border-radius:12px;border:3px solid rgba(201,168,76,0.5);margin-right:28px;flex-shrink:0;box-shadow:0 4px 20px rgba(0,0,0,0.5);"/>'
 
+    # Terrain SVG poste
+    JOUEUR_POSTES = {
+        "Muamer Aljic":      [(.78,.30)], "Samir Bouzar":      [(.78,.70)],
+        "Cachito Wanduka":   [(.78,.50)], "Marly Rampont":     [(.78,.70)],
+        "David Luvualu":     [(.62,.15)], "Jérémy Lauratet":   [(.55,.50),(.78,.50)],
+        "Samed Kilic":       [(.55,.50),(.45,.30)], "Jalil Moustaid":    [(.55,.50),(.45,.70)],
+        "Clément Couturier": [(.55,.50),(.45,.30)], "Bryan Labissière":  [(.32,.50)],
+        "Alexis Gouletquer": [(.12,.50)], "Karim Bouhmidi":    [(.12,.50)],
+        "Chafik Gourichy":   [(.22,.82)],
+    }
+    ALL_POS = [(.92,.50),(.78,.30),(.78,.50),(.78,.70),(.62,.15),(.62,.85),
+               (.55,.50),(.45,.30),(.45,.70),(.32,.50),(.20,.18),(.12,.50),(.20,.82)]
+    actif = set(JOUEUR_POSTES.get(joueur_sel,[]))
+
+    def _terrain_svg(w=200,h=128):
+        p=8; tw=w-2*p; th=h-2*p; mx=p+tw//2; cy=p+th//2
+        tl="rgba(255,255,255,0.55)"; cr=int(min(tw,th)*0.13)
+        srw=int(tw*0.15); srh=int(th*0.55)
+        bh=int(th*0.25); bw=5
+        s=[f'<svg width="{w}" height="{h}" viewBox="0 0 {w} {h}" xmlns="http://www.w3.org/2000/svg">']
+        s.append(f'<rect width="{w}" height="{h}" fill="#111827" rx="6"/>')
+        s.append(f'<rect x="{p}" y="{p}" width="{tw}" height="{th}" fill="none" stroke="{tl}" stroke-width="1"/>')
+        s.append(f'<line x1="{mx}" y1="{p}" x2="{mx}" y2="{p+th}" stroke="{tl}" stroke-width="1"/>')
+        s.append(f'<circle cx="{mx}" cy="{cy}" r="{cr}" fill="none" stroke="{tl}" stroke-width="1"/>')
+        s.append(f'<rect x="{p}" y="{cy-srh//2}" width="{srw}" height="{srh}" fill="none" stroke="{tl}" stroke-width="1"/>')
+        s.append(f'<rect x="{p+tw-srw}" y="{cy-srh//2}" width="{srw}" height="{srh}" fill="none" stroke="{tl}" stroke-width="1"/>')
+        s.append(f'<rect x="{p-bw}" y="{cy-bh//2}" width="{bw}" height="{bh}" fill="none" stroke="{tl}" stroke-width="1"/>')
+        s.append(f'<rect x="{p+tw}" y="{cy-bh//2}" width="{bw}" height="{bh}" fill="none" stroke="{tl}" stroke-width="1"/>')
+        for (xr,yr) in ALL_POS:
+            px=int(p+xr*tw); py=int(p+yr*th)
+            if (xr,yr) in actif:
+                s.append(f'<circle cx="{px}" cy="{py}" r="8" fill="#00ff88" stroke="#000" stroke-width="1"/>')
+            else:
+                s.append(f'<circle cx="{px}" cy="{py}" r="6" fill="rgba(255,255,255,0.18)" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>')
+        s.append('</svg>')
+        return "".join(s)
+
+    terrain_html = _terrain_svg()
     st.markdown(f"""
-    <div style="margin-top:10px;background:linear-gradient(135deg,#161D27 0%,#0D1117 100%);border-radius:12px;padding:20px 24px;border:1px solid rgba(201,168,76,0.25);margin-bottom:10px;display:flex;align-items:center;min-height:120px;">
+    <div style="margin-top:10px;background:linear-gradient(135deg,#161D27 0%,#0D1117 100%);border-radius:12px;padding:20px 24px;border:1px solid rgba(201,168,76,0.25);margin-bottom:10px;display:flex;align-items:center;min-height:120px;gap:16px;">
       {photo_html}
-      <div>
-        <div style="font-size:10px;font-weight:600;color:{GOLD2};letter-spacing:2px;text-transform:uppercase;">US Thionville Lusitanos</div>
-        <div style="font-size:28px;font-weight:900;letter-spacing:2px;color:#F0EDE6;line-height:1.1;margin:3px 0;">{joueur_sel.upper()}</div>
+      <div style="flex:1;">
+        <div style="font-size:10px;font-weight:700;color:{GOLD2};letter-spacing:2px;text-transform:uppercase;">US Thionville Lusitanos</div>
+        <div style="font-size:28px;font-weight:900;letter-spacing:1px;color:#F0EDE6;line-height:1.1;margin:3px 0;font-family:Barlow Condensed,sans-serif;">{joueur_sel.upper()}</div>
         <div style="background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.35);border-radius:6px;padding:2px 10px;font-size:10px;color:#C9A84C;display:inline-block;">{saison_label_j}{note}</div>
       </div>
+      <div style="flex-shrink:0;">{terrain_html}</div>
     </div>""",unsafe_allow_html=True)
 
     st.markdown(f"""<div style="background:#1E2733;border:1px solid rgba(201,168,76,0.3);border-radius:10px;padding:10px 16px;margin-bottom:10px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
@@ -926,7 +972,7 @@ elif mode=="👤 Joueur":
         st.markdown(h,unsafe_allow_html=True)
 
     st.markdown("")
-    col_p,col_s=st.columns([1,1])
+    col_p,col_s=st.columns([1.1,0.9])
     with col_p:
         section("Direction des passes")
         POSTE_MAP = {
@@ -936,8 +982,10 @@ elif mode=="👤 Joueur":
             "Bryan Labissière":"ATT","Karim Bouhmidi":"ATT","Chafik Gourichy":"ATT","Alexis Gouletquer":"ATT",
         }
         _poste = POSTE_MAP.get(joueur_sel, "DC")
-        svg_p=make_pass_svg(fp_r,bp_r,long_r,tp_r,ptf_r,ppa_r,int(pass_w),width=320,height=430,poste=_poste)
-        st.markdown(f'<div style="background:#1E2733;border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:12px;display:flex;justify-content:center;">{svg_p}</div>',unsafe_allow_html=True)
+        svg_p=make_pass_svg(fp_r,bp_r,long_r,tp_r,ptf_r,ppa_r,int(pass_w),
+                            width=480,height=370,poste=_poste,
+                            long_pct=long_pct,ptf_pct=ptf_pct,ppa_pct=ppa_pct,crosses_pct=crosses_pct)
+        st.markdown(f'<div style="background:#0d1117;border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:8px;">{svg_p}</div>',unsafe_allow_html=True)
     with col_s:
         section("Répartition des passes réussies")
         cats=["→ Avant","← Arrière","Longues","Profondeur","Tiers final","Surface"]
@@ -946,14 +994,11 @@ elif mode=="👤 Joueur":
         rh='<div class="sc"><div class="sct">% sur passes réussies</div>'
         for cat,val,col_c in zip(cats,vals,colors_p):
             w=min(val,100)
-            rh+=f'<div style="margin-bottom:10px;"><div style="display:flex;justify-content:space-between;margin-bottom:3px;"><span style="font-size:12px;color:#8B99AC;">{cat}</span><span style="font-size:13px;font-weight:700;color:{col_c};">{val}%</span></div><div style="height:6px;background:#2a2a2a;border-radius:3px;overflow:hidden;"><div style="width:{w}%;height:100%;background:{col_c};border-radius:3px;"></div></div></div>'
+            rh+=f'<div style="margin-bottom:7px;"><div style="display:flex;justify-content:space-between;margin-bottom:2px;"><span style="font-size:11px;color:#8B99AC;">{cat}</span><span style="font-size:12px;font-weight:700;color:{col_c};">{val}%</span></div><div style="height:5px;background:#2a2a2a;border-radius:3px;overflow:hidden;"><div style="width:{w}%;height:100%;background:{col_c};border-radius:3px;"></div></div></div>'
         rh+='</div>'
-        st.markdown(f'<div style="margin-top:22px;">{rh}</div>',unsafe_allow_html=True)
+        st.markdown(f'<div style="margin-top:10px;">{rh}</div>',unsafe_allow_html=True)
         total_r=round(fp_r+bp_r+ptf_r+ppa_r+long_r+tp_r,1)
-        if total_r < 100:
-            st.caption(f"% calculés sur {int(pass_w)} passes réussies. Total = {total_r}% (< 100%) car certaines passes longues ou en profondeur sont aussi comptées dans d'autres catégories selon leur direction.")
-        else:
-            st.caption(f"% calculés sur {int(pass_w)} passes réussies. Total = {total_r}% (> 100%) car certaines passes appartiennent à plusieurs catégories.")
+        st.caption(f"% sur {int(pass_w)} passes réussies.")
 
     st.markdown("")
     section("Duels aériens gagnés (%) par journée")
@@ -964,7 +1009,7 @@ elif mode=="👤 Joueur":
         text=[f"{v}%" for v in aer_pm],textposition="top center",textfont=dict(size=9,color=TEXT),
         fill="tozeroy",fillcolor="rgba(0,255,136,0.08)"))
     fa.add_hline(y=aer_pct,line_dash="dot",line_color=GREY,annotation_text=f"Moy. {aer_pct:.0f}%",annotation_font_color=TEXT)
-    fa.update_layout(**lyt(),height=300); fa.update_yaxes(range=[0,115],gridcolor=BORD)
+    fa.update_layout(**lyt(),height=370); fa.update_yaxes(range=[0,115],gridcolor=BORD)
     st.plotly_chart(fa,use_container_width=True)
 
     section("Duels défensifs gagnés (%) par journée")
@@ -975,7 +1020,7 @@ elif mode=="👤 Joueur":
         text=[f"{v}%" for v in def_pm],textposition="top center",textfont=dict(size=9,color=TEXT),
         fill="tozeroy",fillcolor="rgba(255,208,10,0.08)"))
     fd.add_hline(y=def_pct,line_dash="dot",line_color=GREY,annotation_text=f"Moy. {def_pct:.0f}%",annotation_font_color=TEXT)
-    fd.update_layout(**lyt(),height=280); fd.update_yaxes(range=[0,115],gridcolor=BORD)
+    fd.update_layout(**lyt(),height=350); fd.update_yaxes(range=[0,115],gridcolor=BORD)
     st.plotly_chart(fd,use_container_width=True)
 
 
@@ -1038,7 +1083,7 @@ elif mode=="⚽ Collectif":
         f2=go.Figure()
         f2.add_trace(go.Bar(x=journees_adv,y=thi_gen["xG"],name="xG TL",marker_color=GREY,text=thi_gen["xG"].round(2),textposition="outside"))
         f2.add_trace(go.Bar(x=journees_adv,y=adv_gen["xG"],name="xG Adversaires",marker_color=RED,text=adv_gen["xG"].round(2),textposition="outside"))
-        f2.update_layout(**lyt(),barmode="group",height=300); f2.update_yaxes(gridcolor=BORD)
+        f2.update_layout(**lyt(),barmode="group",height=370); f2.update_yaxes(gridcolor=BORD)
         st.plotly_chart(f2,use_container_width=True)
 
     elif page=="🎯 Finition":
@@ -1053,24 +1098,24 @@ elif mode=="⚽ Collectif":
         f5=go.Figure()
         f5.add_trace(go.Bar(x=journees_adv,y=thi_gen["Goals"],name="Buts",marker_color=bar_colors,text=thi_gen["Goals"].astype(int),textposition="outside"))
         f5.add_trace(go.Scatter(x=journees_adv,y=thi_gen["xG"],name="xG",mode="lines+markers",line=dict(color=GREY,width=2)))
-        f5.update_layout(**lyt(),height=300); f5.update_yaxes(gridcolor=BORD)
+        f5.update_layout(**lyt(),height=370); f5.update_yaxes(gridcolor=BORD)
         st.plotly_chart(f5,use_container_width=True)
         section("Tirs totaux vs cadrés")
         f7=go.Figure(); f7=pct_bar_overlay(f7,journees_adv,thi_gen["Shots"],thi_gen["Shots on target"],"Total","Cadrés","rgba(158,158,158,.35)",GREY)
-        f7.update_layout(**lyt(),barmode="overlay",height=260); f7.update_yaxes(gridcolor=BORD)
+        f7.update_layout(**lyt(),barmode="overlay",height=340); f7.update_yaxes(gridcolor=BORD)
         st.plotly_chart(f7,use_container_width=True)
         section("Distance moyenne des tirs (m)")
         f29=go.Figure()
         f29.add_trace(go.Bar(x=journees_adv,y=thi_idx["Average shot distance"],name="US Thionville",marker_color=GREY,text=thi_idx["Average shot distance"].round(1),textposition="outside"))
         f29.add_trace(go.Bar(x=journees_adv,y=adv_idx["Average shot distance"],name="Adversaires",marker_color=RED,text=adv_idx["Average shot distance"].round(1),textposition="outside"))
-        f29.update_layout(**lyt(),barmode="group",height=290); f29.update_yaxes(gridcolor=BORD)
+        f29.update_layout(**lyt(),barmode="group",height=360); f29.update_yaxes(gridcolor=BORD)
         st.plotly_chart(f29,use_container_width=True)
         section("Tirs par phase de jeu")
         fp=go.Figure()
         fp.add_trace(go.Bar(x=journees_adv,y=thi_off["Positional attacks with shots"],name="Att. positionnelle",marker_color=GREY))
         fp.add_trace(go.Bar(x=journees_adv,y=thi_off["Counterattacks with shots"],name="Contre-attaque",marker_color=RED))
         fp.add_trace(go.Bar(x=journees_adv,y=thi_off["CPA_with_shots"],name="CPA",marker_color=GOLD))
-        fp.update_layout(**lyt(),barmode="group",height=300); fp.update_yaxes(gridcolor=BORD)
+        fp.update_layout(**lyt(),barmode="group",height=370); fp.update_yaxes(gridcolor=BORD)
         st.plotly_chart(fp,use_container_width=True)
         section("% attaques avec tir")
         et=["Positionnelles","Contres","Corners","Coups francs"]
@@ -1079,15 +1124,15 @@ elif mode=="⚽ Collectif":
         f11=go.Figure()
         f11.add_trace(go.Bar(x=et,y=ett,name="US Thionville",marker_color=GREY,text=[f"{v:.1f}%" for v in ett],textposition="outside"))
         f11.add_trace(go.Bar(x=et,y=eta,name="Adversaires",marker_color=RED,text=[f"{v:.1f}%" for v in eta],textposition="outside"))
-        f11.update_layout(**lyt(),barmode="group",height=310); f11.update_yaxes(range=[0,100],gridcolor=BORD)
+        f11.update_layout(**lyt(),barmode="group",height=380); f11.update_yaxes(range=[0,100],gridcolor=BORD)
         st.plotly_chart(f11,use_container_width=True)
         section("Attaques positionnelles — total vs avec tir")
         f12=go.Figure(); f12=pct_bar_overlay(f12,journees_adv,thi_off["Positional attacks"],thi_off["Positional attacks with shots"],"Total","Avec tir","rgba(158,158,158,.35)",GREY)
-        f12.update_layout(**lyt(),barmode="overlay",height=260); f12.update_yaxes(gridcolor=BORD)
+        f12.update_layout(**lyt(),barmode="overlay",height=340); f12.update_yaxes(gridcolor=BORD)
         st.plotly_chart(f12,use_container_width=True)
         section("Centres — total vs réussis")
         f13=go.Figure(); f13=pct_bar_overlay(f13,journees_adv,thi_off["Crosses"],thi_off["Crosses accurate"],"Total","Réussis","rgba(158,158,158,.35)",GREY)
-        f13.update_layout(**lyt(),barmode="overlay",height=260); f13.update_yaxes(gridcolor=BORD)
+        f13.update_layout(**lyt(),barmode="overlay",height=340); f13.update_yaxes(gridcolor=BORD)
         st.plotly_chart(f13,use_container_width=True)
 
     elif page=="🛡️ Pressing":
@@ -1108,7 +1153,7 @@ elif mode=="⚽ Collectif":
         fpp=go.Figure()
         fpp.add_trace(go.Bar(x=journees_adv,y=thi_idx["PPDA"],name="PPDA TL",marker_color=GREY,text=thi_idx["PPDA"].round(2),textposition="outside"))
         fpp.add_hline(y=pm,line_dash="dash",line_color=GOLD,annotation_text=f"Moy : {pm:.2f}",annotation_font_color=GOLD)
-        fpp.update_layout(**lyt(),height=300); fpp.update_yaxes(gridcolor=BORD)
+        fpp.update_layout(**lyt(),height=370); fpp.update_yaxes(gridcolor=BORD)
         st.plotly_chart(fpp,use_container_width=True)
         section("Ratio % récup zone off. ÷ % pertes zone déf.")
         rm=thi_gen["ratio_pression"].mean()
@@ -1116,7 +1161,7 @@ elif mode=="⚽ Collectif":
         fr.add_trace(go.Bar(x=journees_adv,y=thi_gen["ratio_pression"],marker_color=[GREEN if v>=1.0 else GOLD if v>=0.7 else RED for v in thi_gen["ratio_pression"]],text=thi_gen["ratio_pression"].astype(str),textposition="outside"))
         fr.add_hline(y=1.0,line_dash="dash",line_color=GOLD,annotation_text="Équilibre : 1.0",annotation_font_color=GOLD)
         fr.add_hline(y=rm,line_dash="dot",line_color=GREY,annotation_text=f"Moy. : {rm:.2f}",annotation_font_color=TEXT)
-        fr.update_layout(**lyt(),height=300); fr.update_yaxes(gridcolor=BORD)
+        fr.update_layout(**lyt(),height=370); fr.update_yaxes(gridcolor=BORD)
         st.plotly_chart(fr,use_container_width=True)
         section("% récupérations zone offensive (seuil : 13%)")
         pro=thi_gen["pct_recup_high"].round(1); S=13.0
@@ -1124,35 +1169,35 @@ elif mode=="⚽ Collectif":
         fro.add_trace(go.Bar(x=journees_adv,y=pro,marker_color=[GREEN if v>=S else RED for v in pro],text=[f"{v}%" for v in pro],textposition="outside",textfont=dict(color=TEXT)))
         fro.add_hline(y=S,line_dash="dash",line_color=RED,annotation_text=f"Seuil : {S}%",annotation_font_color=RED)
         fro.add_hline(y=pro.mean(),line_dash="dot",line_color=GREY,annotation_text=f"Moy. : {pro.mean():.1f}%",annotation_font_color=TEXT)
-        fro.update_layout(**lyt(),height=300); fro.update_yaxes(gridcolor=BORD,range=[0,max(pro)*1.3])
+        fro.update_layout(**lyt(),height=370); fro.update_yaxes(gridcolor=BORD,range=[0,max(pro)*1.3])
         st.plotly_chart(fro,use_container_width=True)
         section("Pertes vs Récupérations")
         f9=go.Figure()
         f9.add_trace(go.Bar(x=journees_adv,y=thi_gen["Losses"],name="Pertes",marker_color=RED))
         f9.add_trace(go.Bar(x=journees_adv,y=thi_gen["Recoveries"],name="Récupérations",marker_color=GREY))
-        f9.update_layout(**lyt(),barmode="group",height=260); f9.update_yaxes(gridcolor=BORD)
+        f9.update_layout(**lyt(),barmode="group",height=340); f9.update_yaxes(gridcolor=BORD)
         st.plotly_chart(f9,use_container_width=True)
         ca,cb=st.columns(2)
         with ca:
             section("Duels défensifs gagnés (%)")
             f16=go.Figure(); f16.add_trace(go.Scatter(x=journees_adv,y=thi_def["% Defensive duels won"],mode="lines+markers",line=dict(color=GREY,width=2),fill="tozeroy",fillcolor="rgba(158,158,158,.1)"))
             mv=thi_def["% Defensive duels won"].mean(); f16.add_hline(y=mv,line_dash="dash",line_color=GOLD,annotation_text=f"moy. {mv:.1f}%",annotation_font_color=GOLD)
-            f16.update_layout(**lyt(),height=260); f16.update_yaxes(range=[40,90],gridcolor=BORD); st.plotly_chart(f16,use_container_width=True)
+            f16.update_layout(**lyt(),height=340); f16.update_yaxes(range=[40,90],gridcolor=BORD); st.plotly_chart(f16,use_container_width=True)
         with cb:
             section("Duels aériens gagnés (%)")
             f17=go.Figure(); f17.add_trace(go.Scatter(x=journees_adv,y=thi_def["% Aerial duels won"],mode="lines+markers",line=dict(color=GREY,width=2),fill="tozeroy",fillcolor="rgba(158,158,158,.1)"))
             mv2=thi_def["% Aerial duels won"].mean(); f17.add_hline(y=mv2,line_dash="dash",line_color=GOLD,annotation_text=f"moy. {mv2:.1f}%",annotation_font_color=GOLD)
-            f17.update_layout(**lyt(),height=260); f17.update_yaxes(range=[20,90],gridcolor=BORD); st.plotly_chart(f17,use_container_width=True)
+            f17.update_layout(**lyt(),height=340); f17.update_yaxes(range=[20,90],gridcolor=BORD); st.plotly_chart(f17,use_container_width=True)
         section("Buts marqués vs concédés")
         f8=go.Figure()
         f8.add_trace(go.Scatter(x=journees_adv,y=thi_gen["Goals"],name="Marqués",mode="lines+markers",line=dict(color=GREY,width=2)))
         f8.add_trace(go.Scatter(x=journees_adv,y=buts_adv_list,name="Concédés",mode="lines+markers",line=dict(color=RED,width=2)))
-        f8.update_layout(**lyt(),height=260); f8.update_yaxes(gridcolor=BORD); st.plotly_chart(f8,use_container_width=True)
+        f8.update_layout(**lyt(),height=340); f8.update_yaxes(gridcolor=BORD); st.plotly_chart(f8,use_container_width=True)
         section("Buts concédés & tirs subis")
         f18=go.Figure()
         f18.add_trace(go.Bar(x=journees_adv,y=thi_def["Conceded goals"],name="Buts concédés",marker_color=RED,text=thi_def["Conceded goals"].astype(int),textposition="outside"))
         f18.add_trace(go.Scatter(x=journees_adv,y=thi_def["Shots against"],name="Tirs subis",mode="lines+markers",line=dict(color=GREY,width=2),yaxis="y2"))
-        f18.update_layout(**lyt(),barmode="group",height=290,yaxis2=dict(overlaying="y",side="right",showgrid=False,color=TEXT)); f18.update_yaxes(gridcolor=BORD)
+        f18.update_layout(**lyt(),barmode="group",height=360,yaxis2=dict(overlaying="y",side="right",showgrid=False,color=TEXT)); f18.update_yaxes(gridcolor=BORD)
         st.plotly_chart(f18,use_container_width=True)
 
     elif page=="🔁 En possession":
@@ -1165,35 +1210,35 @@ elif mode=="⚽ Collectif":
         with pa:
             section("Passes progressives — total vs réussies")
             f19=go.Figure(); f19=pct_bar_overlay(f19,journees_adv,thi_pass["Progressive passes"],thi_pass["Progressive passes accurate"],"Total","Réussies","rgba(158,158,158,.35)",GREY)
-            f19.update_layout(**lyt(),barmode="overlay",height=250); f19.update_yaxes(gridcolor=BORD); st.plotly_chart(f19,use_container_width=True,key="poss_f19")
+            f19.update_layout(**lyt(),barmode="overlay",height=330); f19.update_yaxes(gridcolor=BORD); st.plotly_chart(f19,use_container_width=True,key="poss_f19")
         with pb:
             section("Passes longues — total vs réussies")
             f20=go.Figure(); f20=pct_bar_overlay(f20,journees_adv,thi_pass["Long passes"],thi_pass["Long passes accurate"],"Total","Réussies","rgba(158,158,158,.35)",GREY)
-            f20.update_layout(**lyt(),barmode="overlay",height=250); f20.update_yaxes(gridcolor=BORD); st.plotly_chart(f20,use_container_width=True,key="poss_f20")
+            f20.update_layout(**lyt(),barmode="overlay",height=330); f20.update_yaxes(gridcolor=BORD); st.plotly_chart(f20,use_container_width=True,key="poss_f20")
         section("Passes / possession")
         f21=go.Figure()
         f21.add_trace(go.Bar(x=journees_adv,y=thi_idx["Average passes per possession"],name="US Thionville",marker_color=GREY,text=thi_idx["Average passes per possession"].round(1),textposition="outside"))
         f21.add_trace(go.Bar(x=journees_adv,y=adv_idx["Average passes per possession"],name="Adversaires",marker_color=RED,text=adv_idx["Average passes per possession"].round(1),textposition="outside"))
         mv21=thi_idx["Average passes per possession"].mean()
         f21.add_hline(y=mv21,line_dash="dash",line_color=GOLD,annotation_text=f"Moy TL : {mv21:.2f}",annotation_font_color=GOLD)
-        f21.update_layout(**lyt(),barmode="group",height=290); f21.update_yaxes(gridcolor=BORD); st.plotly_chart(f21,use_container_width=True,key="poss_f21")
+        f21.update_layout(**lyt(),barmode="group",height=360); f21.update_yaxes(gridcolor=BORD); st.plotly_chart(f21,use_container_width=True,key="poss_f21")
         pa,pb=st.columns(2)
         with pa:
             section("% longues balles")
             f22=go.Figure()
             f22.add_trace(go.Bar(x=journees_adv,y=thi_idx["Long pass %"],name="US Thionville",marker_color=GREY,text=thi_idx["Long pass %"].round(1),textposition="outside"))
             f22.add_trace(go.Bar(x=journees_adv,y=adv_idx["Long pass %"],name="Adversaires",marker_color=RED,text=adv_idx["Long pass %"].round(1),textposition="outside"))
-            f22.update_layout(**lyt(),barmode="group",height=290); f22.update_yaxes(range=[0,115],gridcolor=BORD); st.plotly_chart(f22,use_container_width=True,key="poss_f22")
+            f22.update_layout(**lyt(),barmode="group",height=360); f22.update_yaxes(range=[0,115],gridcolor=BORD); st.plotly_chart(f22,use_container_width=True,key="poss_f22")
         with pb:
             section("Hors-jeu par journée")
             f14b=go.Figure(go.Bar(x=journees_adv,y=thi_off["Offsides"],marker_color=GOLD,text=thi_off["Offsides"].astype(int),textposition="outside"))
-            f14b.update_layout(**lyt(),height=290); f14b.update_yaxes(gridcolor=BORD); st.plotly_chart(f14b,use_container_width=True,key="poss_f14b")
+            f14b.update_layout(**lyt(),height=360); f14b.update_yaxes(gridcolor=BORD); st.plotly_chart(f14b,use_container_width=True,key="poss_f14b")
         section("Passes vers le tiers final")
         f23=go.Figure(); f23=pct_bar_overlay(f23,journees_adv,thi_pass["Passes to final third"],thi_pass["Passes to final third accurate"],"Total","Réussies","rgba(158,158,158,.35)",GREY)
-        f23.update_layout(**lyt(),barmode="overlay",height=250); f23.update_yaxes(gridcolor=BORD); st.plotly_chart(f23,use_container_width=True,key="poss_f23")
+        f23.update_layout(**lyt(),barmode="overlay",height=330); f23.update_yaxes(gridcolor=BORD); st.plotly_chart(f23,use_container_width=True,key="poss_f23")
         section("Passes progressives")
         f24=go.Figure(); f24=pct_bar_overlay(f24,journees_adv,thi_pass["Progressive passes"],thi_pass["Progressive passes accurate"],"Total","Réussies","rgba(158,158,158,.35)",GREY)
-        f24.update_layout(**lyt(),barmode="overlay",height=250); f24.update_yaxes(gridcolor=BORD); st.plotly_chart(f24,use_container_width=True,key="poss_f24")
+        f24.update_layout(**lyt(),barmode="overlay",height=330); f24.update_yaxes(gridcolor=BORD); st.plotly_chart(f24,use_container_width=True,key="poss_f24")
 
     elif page=="📅 Analyse par match":
         st.markdown("# 📅 Analyse par match")
